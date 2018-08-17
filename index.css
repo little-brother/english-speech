@@ -1,0 +1,41 @@
+* {margin: 0px; padding: 0px;} 
+html,body { padding: 0; margin: 0; font: normal "Helvetica Neue", Helvetica, Arial, sans-serif;}
+body * {font-size: 24px;}
+
+.button {cursor: pointer; display: inline-block; padding: 10px 30px; border-radius: 10px; -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
+.close {position: absolute !important; cursor: pointer; transform: rotate(45deg); z-index: 10; top: 0px; right: 0px;}
+
+#page-text {position: absolute; top: 20px; bottom: 80px; left: 20px; right: 20px; text-align: center;}
+#page-text #text {height: 100%; width: 100%; padding: 20px; box-sizing: border-box;}
+#page-text #button-continue {background: #0a0; color: #fff; margin-top: 10px; float: right;}
+#page-text #button-help {background: #66f; color: #fff; margin-top: 10px; float: left;}
+
+#page-help {position: absolute; top: 20px; bottom: 20px; left: 20px; right: 20px; text-align: left; display: none; padding-top: 10px;}
+#page-help ul {margin-left: 40px;}
+
+#page-phrase {justify-content: center; align-items: center; display: none; position: absolute; top: 20px; bottom: 20px; right: 20px; left: 20px; text-align: center;} 
+#page-phrase[attention] #attention {display: block;}
+#page-phrase[attention] *:not([id="attention"]) {display: none;}
+#page-phrase:not([attention]) #attention {display: none;}
+#page-phrase #panel-counter > * {display: inline-block; font-size: 56px;}
+#page-phrase #phrase {border-bottom: 1px solid #bbb; padding: 10px; margin: 20px; margin-bottom: 10px;}
+#page-phrase #panel-speak #voices {display: inline-block;}
+#page-phrase #panel-speak #voices:empty ~ #voice-speed {display: none;}
+#page-phrase #panel-speak .button {padding: 0px; font-size: 36px; color: #bbb;}
+#page-phrase #recognition {color: #b00;}
+#page-phrase #recognition[confidence]:not([confidence="0%"])::after {content: attr(confidence); position: relative; bottom: -10px; font-size: 10px;}
+#page-phrase #recognition[correct="true"] {color: #0b0;}
+#page-phrase #panel-record {margin: 30px 0;}
+#page-phrase #panel-record #button-record {background: #f00; color: #fff;}
+#page-phrase #panel-record #button-record[record="true"] {background: #f99;}
+#page-phrase #panel-record #button-listen {background: #66f; color: #fff;}
+#page-phrase #panel-record #button-listen[hidden] {display: none;}
+#page-phrase #compare {position: absolute; right: 0; left: 0; bottom: 20px; font-size: 14px !important;}
+#page-phrase #compare > * {font-size: 14px !important;}
+
+
+.circle {border-radius: 100%; position: relative; display: inline-block; width: 60px; height: 60px;}
+.circle.plus:before, .circle.plus:after {content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #bbb;}
+.circle.plus:before {width: 10px; margin: 10px auto;}
+.circle.plus:after {margin: auto 10px; height: 10px;}
+

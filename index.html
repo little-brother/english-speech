@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8"/> 
+	<link href = "index.css" rel="stylesheet"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />	
+	<script src = "diff_match_patch.js"></script>
+	<script src = "index.js"></script>
+</head>
+<body>
+
+	<div id = "page-text">
+		<textarea id = "text" autocomplete = "off">The first night, I sleep on the sand. I am a thousand miles from a land with people. I think that no people are around me. So I am shocked when somebody speaks to me in the morning. I hear these words, “Please, draw me a sheep.”</textarea>
+		<div id = "button-help" class = "button">Help</div>
+		<div id = "button-continue" class = "button">Continue</div>
+	</div>
+
+	<div id = "page-phrase" attention>
+		<div id = "attention">Some troubles: speech recognition is unsupported or microphone is disabled.<br><br>Use Chrome browser.</div>
+		<div class = "circle plus close"></div>
+		<div id = "wrapper">
+			<div id = "panel-counter">
+				<div id = "button-prev-phrase" class = "button">&#9668;</div>
+				<div id = "phrase-number"></div>
+				<div id = "button-next-phrase" class = "button">&#9658;</div>
+			</div>
+			<div id = "panel-speak">
+				<div id = "voices"></div>
+				<label for="voice-speed"></label>
+				<input id = "voice-speed" name = "voice-speed" type="range" title = "Speed of generated speech" min = "0.5" max = "1.5" step = "0.1" value = "1"/>
+			</div>
+
+			<div id = "phrase"></div>
+			<div id = "recognition" title = "Google Speech Recognition result and its cofficient of the recognition confidence">&nbsp;</div>
+			<div id = "recognition-confidence" title = "Recognition confidence"></div>
+			
+			<div id = "panel-record">
+				<div id = "button-listen" class = "button">Listen</div>
+				<div id = "button-record" class = "button">Record</div>	
+			</div>	
+			<div id = "compare"></div>
+
+		</div>	
+	</div>
+
+	<div id = "page-help">
+		<div class = "circle plus close"></div>
+		<p>Welcome!</p>
+		<br>	
+		<p>This is a demo application to practice English speech. Only <a href = "https://www.google.ru/intl/en_uk/chrome/">Chrome browser</a> is supported.<p>
+		<br>	
+		<ul>
+			<li>Enter the text you want to read aloud and click "Continue".</li>
+			<li>On next screen push "Record" and hold to record your voice.</li>
+			<li>The voice will be recognized via <a href = "https://developer.mozilla.org/ru/docs/Web/API/Web_Speech_API">Web Speech API</a> and you will see how perfectly you speak.</li>
+		</ul>
+		<br>
+		<br>
+		<p>If you have any questions or comments, just let me know <a href="lb.im@yandex.ru">lb.im@yandex.ru</a></p>	 
+	</div>
+</body>
+</html>
+
