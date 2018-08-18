@@ -27,6 +27,7 @@ window.addEventListener('load', function() {
 	var $phrase = document.querySelector('#phrase');
 	var $phrase_number = document.querySelector('#phrase-number');
 	var $voices = document.querySelector('#panel-speak #voices');
+	var $voice_speed = document.querySelector('#voice-speed');	
 	var $recognition = document.querySelector('#recognition');
 	var $compare = document.querySelector('#compare');
 
@@ -40,16 +41,23 @@ window.addEventListener('load', function() {
 			return setPhrase(phrases.length - 1);
 
 		$pages.phrase.style.display = 'flex';
-		$phrase.innerHTML = phrases[no];
+		$phrase.innerHTML = phrases[no].split(' ').map((e) => '<span>' + e + '</span>').join(' ');
+		$phrase.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
 		$phrase_number.innerHTML = (no + 1) + '/' + phrases.length;
+		$voice_speed.value = localStorage && localStorage.getItem('voice-speed') || 1;
 		$recognition.innerHTML = '&nbsp;';
 		$recognition.removeAttribute('correct');
 		$recognition.removeAttribute('confidence');
 		$compare.innerHTML = '';
 		$buttons.listen.setAttribute('hidden', true);
 		$buttons.record.removeAttribute('record');
-		
+
 		phrase_no = no;
+	}
+
+	function speakWord () {
+		var evt = new CustomEvent('speak-word', {detail: this.textContent});
+		document.dispatchEvent(evt);
 	}
 
 	$buttons.continue.addEventListener('click', function () {
@@ -74,13 +82,26 @@ window.addEventListener('load', function() {
 
 	if (window.speechSynthesis) {
 		var voices = [];
+		var current_voice = localStorage && localStorage.getItem('voice') || 2;
+		$voice_speed.addEventListener('input', (event) => localStorage && localStorage.setItem('voice-speed', event.target.value));
 
-		function speakPhrase(event) {	
+		function speakPhrase(event) {
+			current_voice = event.target.getAttribute('voice') || 2;
+			if (localStorage)
+				localStorage.setItem('voice', current_voice);
+
 			var utterance = new SpeechSynthesisUtterance(document.querySelector('#phrase').textContent);
-			utterance.voice = voices[event.target.getAttribute('voice') || 2]; // 2-4
-			utterance.rate = document.querySelector('#voice-speed').value || 1;
+			utterance.voice = voices[current_voice];
+			utterance.rate = $voice_speed.value || 1;
 			speechSynthesis.speak(utterance);			
 		}
+
+		document.addEventListener('speak-word', function (event) {
+			var utterance = new SpeechSynthesisUtterance(event.detail);
+			utterance.voice = voices[current_voice];
+			utterance.rate = $voice_speed.value || 1;
+			speechSynthesis.speak(utterance);
+		})
 
 		function loadVoices () {
 			$voices.innerHTML = '';

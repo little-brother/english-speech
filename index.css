@@ -5,23 +5,23 @@ body * {font-size: 24px;}
 .button {cursor: pointer; display: inline-block; padding: 10px 30px; border-radius: 10px; -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
 .close {position: absolute !important; cursor: pointer; transform: rotate(45deg); z-index: 10; top: 0px; right: 0px;}
 
-#page-text {position: absolute; top: 20px; bottom: 80px; left: 20px; right: 20px; text-align: center;}
-#page-text #text {height: 100%; width: 100%; padding: 20px; box-sizing: border-box;}
-#page-text #button-continue {background: #0a0; color: #fff; margin-top: 10px; float: right;}
-#page-text #button-help {background: #66f; color: #fff; margin-top: 10px; float: left;}
+#page-text {position: absolute; top: 10px; bottom: 80px; left: 10px; right: 10px; text-align: center;}
+#page-text #text {height: 100%; width: 100%; padding: 20px; box-sizing: border-box; margin: 1px;}
+#page-text #button-continue {background: #0a0; color: #fff; margin-top: 5px; float: right;}
+#page-text #button-help {background: #66f; color: #fff; margin-top: 5px; float: left;}
 
-#page-help {position: absolute; top: 20px; bottom: 20px; left: 20px; right: 20px; text-align: left; display: none; padding-top: 10px;}
+#page-help {position: absolute; top: 10px; bottom: 10px; left: 10px; right: 10px; text-align: left; display: none; padding-top: 10px;}
 #page-help ul {margin-left: 40px;}
 
-#page-phrase {justify-content: center; align-items: center; display: none; position: absolute; top: 20px; bottom: 20px; right: 20px; left: 20px; text-align: center;} 
+#page-phrase {justify-content: center; align-items: center; display: none; position: absolute; top: 10px; bottom: 10px; right: 10px; left: 10px; text-align: center;} 
 #page-phrase[attention] #attention {display: block;}
-#page-phrase[attention] *:not([id="attention"]) {display: none;}
+#page-phrase[attention] > *:not([id="attention"]) {display: none;}
 #page-phrase:not([attention]) #attention {display: none;}
 #page-phrase #panel-counter > * {display: inline-block; font-size: 56px;}
-#page-phrase #phrase {border-bottom: 1px solid #bbb; padding: 10px; margin: 20px; margin-bottom: 10px;}
+#page-phrase #phrase {border-bottom: 1px solid #bbb; padding: 10px; margin-bottom: 10px;}
 #page-phrase #panel-speak #voices {display: inline-block;}
 #page-phrase #panel-speak #voices:empty ~ #voice-speed {display: none;}
-#page-phrase #panel-speak .button {padding: 0px; font-size: 36px; color: #bbb;}
+#page-phrase #panel-speak .button {padding: 0px; margin: 0 5px; font-size: 36px; color: #bbb;}
 #page-phrase #recognition {color: #b00;}
 #page-phrase #recognition[confidence]:not([confidence="0%"])::after {content: attr(confidence); position: relative; bottom: -10px; font-size: 10px;}
 #page-phrase #recognition[correct="true"] {color: #0b0;}
