@@ -3,10 +3,10 @@ html,body { padding: 0; margin: 0; font: normal "Helvetica Neue", Helvetica, Ari
 body * {font-size: 24px;}
 
 .button {cursor: pointer; display: inline-block; padding: 10px 30px; border-radius: 10px; -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
-.close {position: absolute !important; cursor: pointer; transform: rotate(45deg); z-index: 10; top: 0px; right: 0px;}
+.close {position: absolute !important; cursor: pointer; transform: rotate(45deg); z-index: 10; top: 2px; right: 2px;}
 
 #page-text {position: absolute; top: 10px; bottom: 80px; left: 10px; right: 10px; text-align: center;}
-#page-text #text {height: 100%; width: 100%; padding: 20px; box-sizing: border-box; margin: 1px;}
+#page-text #text {height: 100%; width: 100%; padding: 20px; box-sizing: border-box; margin: 1px; border: 1px #bbb solid;}
 #page-text #button-continue {background: #0a0; color: #fff; margin-top: 5px; float: right;}
 #page-text #button-help {background: #66f; color: #fff; margin-top: 5px; float: left;}
 
