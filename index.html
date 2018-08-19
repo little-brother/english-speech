@@ -5,14 +5,22 @@
 	<link href = "index.css" rel="stylesheet"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />	
 	<script src = "diff_match_patch.js"></script>
+	<script src = "texts.js"></script>
 	<script src = "index.js"></script>
 </head>
 <body>
 
 	<div id = "page-text">
 		<textarea id = "text" autocomplete = "off">The first night, I sleep on the sand. I am a thousand miles from a land with people. I think that no people are around me. So I am shocked when somebody speaks to me in the morning. I hear these words, “Please, draw me a sheep.”</textarea>
-		<div id = "button-help" class = "button">Help</div>
-		<div id = "button-continue" class = "button">Continue</div>
+		<table id = "control">
+			<tr>
+			<td id = "button-help" class = "button">Help</td>
+			<td id = "selector">
+				<select id = "texts"></select>
+			</td>
+			<td id = "button-continue" class = "button">Continue</td>
+		</tr>	
+		</table>
 	</div>
 
 	<div id = "page-phrase" attention>
@@ -60,7 +68,7 @@
 		</ul>
 		<br>
 		<br>
-		<p>If you have any questions or comments, just let me know <a href="lb.im@yandex.ru">lb.im@yandex.ru</a></p>	 
+		<p>If you have any questions or comments, just let me know <a href="lb.im@yandex.ru">lb.im@yandex.ru</a> or visit <a href = "https://github.com/little-brother/english-speech">project page</a>.</p>	 
 	</div>
 </body>
 </html>

@@ -24,6 +24,7 @@ window.addEventListener('load', function() {
 	}
 
 	var $text = document.querySelector('#text');
+	var $texts = document.querySelector('#texts');
 	var $phrase = document.querySelector('#phrase');
 	var $phrase_number = document.querySelector('#phrase-number');
 	var $voices = document.querySelector('#panel-speak #voices');
@@ -31,7 +32,17 @@ window.addEventListener('load', function() {
 	var $recognition = document.querySelector('#recognition');
 	var $compare = document.querySelector('#compare');
 
-	$text.innerHTML = localStorage && localStorage.getItem('text') || $text.value;
+	for (var name in texts) {
+		var $option = document.createElement('option');
+		$option.setAttribute('value', name);
+		$option.innerHTML = name;
+		$texts.appendChild($option);
+	};
+
+	$texts.addEventListener('change', (event) => $text.value = texts[event.target.value]);
+	var current_text_no = localStorage && localStorage.getItem('text_no') || $texts.value;
+	$text.innerHTML = texts[current_text_no];
+	$texts.value = current_text_no;
 
 	function setPhrase(no) {
 		if (no < 0)
@@ -44,6 +55,8 @@ window.addEventListener('load', function() {
 		$phrase.innerHTML = phrases[no].split(' ').map((e) => '<span>' + e + '</span>').join(' ');
 		$phrase.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
 		$phrase_number.innerHTML = (no + 1) + '/' + phrases.length;
+		$buttons.prev_phrase.style.visibility = no == 0 ? 'hidden' : 'visible';
+		$buttons.next_phrase.style.visibility = no == phrases.length - 1 ? 'hidden' : 'visible';
 		$voice_speed.value = localStorage && localStorage.getItem('voice-speed') || 1;
 		$recognition.innerHTML = '&nbsp;';
 		$recognition.removeAttribute('correct');
@@ -62,20 +75,10 @@ window.addEventListener('load', function() {
 
 	$buttons.continue.addEventListener('click', function () {
 		if (localStorage)
-			localStorage.setItem('text', $text.value);
+			localStorage.setItem('text_no', $texts.value);
 
-		phrases = [];
-		var chunks = $text.value.match( /[^\.!\?]+[\.!\?]+/g);
+		phrases = $text.value.split('\n').map((e) => e.trim());
 
-		for (i = 0; i < chunks.length; i++) {
-			var phrase = chunks[i];
-			while (phrase.length < 30 && i < chunks.length - 2) {
-				phrase += ' ' + chunks[i + 1];
-				i++;
-			}
-			phrases.push(phrase);
-		}
-		
 		$pages.text.style.display = 'none';
 		setPhrase(0);
 	});
