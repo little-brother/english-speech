@@ -151,7 +151,7 @@ window.addEventListener('load', function() {
 	} 
 	document.querySelectorAll('.close').forEach(($e) => $e.addEventListener('click', closePage));
 
-	history.pushState({}, '', '/'); // index.html
+	history.pushState({}, '', window.location.pathname);
 	window.addEventListener('popstate', function(event) {
 		if ($pages.text.style.display == 'block')
 			return history.back();
