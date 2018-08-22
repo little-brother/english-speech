@@ -27,10 +27,12 @@ window.addEventListener('load', function() {
 	var $texts = document.querySelector('#texts');
 	var $phrase = document.querySelector('#phrase');
 	var $phrase_number = document.querySelector('#phrase-number');
-	var $voices = document.querySelector('#panel-speak #voices');
-	var $voice_speed = document.querySelector('#voice-speed');	
+	var $voices = document.querySelector('#voices');
+	var $voice_speed = document.querySelector('#voice-speed');
+	var $panel_recognition = document.querySelector('#panel-recognition');	
 	var $recognition = document.querySelector('#recognition');
 	var $compare = document.querySelector('#compare');
+	var $switch_mode = document.querySelector('#switch-mode');
 
 	for (var name in texts) {
 		var $option = document.createElement('option');
@@ -51,14 +53,14 @@ window.addEventListener('load', function() {
 		if (no > phrases.length - 1)
 			return setPhrase(phrases.length - 1);
 
-		$pages.phrase.style.display = 'flex';
+		$pages.phrase.style.display = 'block';
 		$phrase.innerHTML = phrases[no].split(' ').map((e) => '<span>' + e + '</span>').join(' ');
 		$phrase.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
 		$phrase_number.innerHTML = (no + 1) + '/' + phrases.length;
 		$buttons.prev_phrase.style.visibility = no == 0 ? 'hidden' : 'visible';
 		$buttons.next_phrase.style.visibility = no == phrases.length - 1 ? 'hidden' : 'visible';
 		$voice_speed.value = localStorage && localStorage.getItem('voice-speed') || 1;
-		$recognition.innerHTML = '&nbsp;';
+		$recognition.innerHTML = '';
 		$recognition.removeAttribute('correct');
 		$recognition.removeAttribute('confidence');
 		$compare.innerHTML = '';
@@ -68,7 +70,8 @@ window.addEventListener('load', function() {
 		phrase_no = no;
 	}
 
-	function speakWord () {
+	function speakWord (event) {
+		event.stopImmediatePropagation();
 		var evt = new CustomEvent('speak-word', {detail: this.textContent});
 		document.dispatchEvent(evt);
 	}
@@ -80,6 +83,7 @@ window.addEventListener('load', function() {
 		phrases = $text.value.split('\n').map((e) => e.trim());
 
 		$pages.text.style.display = 'none';
+		$pages.phrase.querySelector('#caption').innerHTML = $texts.value;
 		setPhrase(0);
 	});
 
@@ -130,14 +134,15 @@ window.addEventListener('load', function() {
 		}
 	}
 	
-	function playAudio() {
+	$buttons.listen.addEventListener('click', function (event) {
 		if (!audio)
 			return;
 
+		event.stopImmediatePropagation();
+
 		var url = URL.createObjectURL(audio);
 		new Audio(url).play();
-	}
-	$buttons.listen.addEventListener('click', playAudio);
+	});
 	
 	function closePage() {
 		$pages.text.style.display = 'block';
@@ -145,6 +150,15 @@ window.addEventListener('load', function() {
 		$pages.help.style.display = 'none';
 	} 
 	document.querySelectorAll('.close').forEach(($e) => $e.addEventListener('click', closePage));
+
+	history.pushState({}, '', '/'); // index.html
+	window.addEventListener('popstate', function(event) {
+		if ($pages.text.style.display == 'block')
+			return history.back();
+
+		history.pushState(null, null, window.location.pathname);
+		closePage();
+	}, false);
 
 	$buttons.prev_phrase.addEventListener('click', () => setPhrase(phrase_no - 1));
 	$buttons.next_phrase.addEventListener('click', () => setPhrase(phrase_no + 1));
@@ -170,8 +184,12 @@ window.addEventListener('load', function() {
 			if (event.type != 'touchstart' && event.type == 'mousedown' && event.which != 1)
 				return;
 
+			event.stopImmediatePropagation();
+
 			$buttons.record.setAttribute('record', true);
 			$compare.innerHTML = '';
+			$recognition.innerHTML = '';
+			$recognition.removeAttribute('confidence');
 
 			chunks = [];
 			audio = null;
@@ -181,12 +199,19 @@ window.addEventListener('load', function() {
 				recognition.lang = isMobile ? 'en-US' : 'en-UK';
 				recognition.onresult = function (event) {
 					var res = event.results[0][0];
-					$recognition.innerHTML = res.transcript;
-					$recognition.setAttribute('confidence', ((+res.confidence).toFixed(2) * 100) + '%');
+
+					var phrase = $phrase.textContent.trim();
+					var transcript = (res.transcript || '').replace(/\d+/g, num2text);
+
+					$recognition.innerHTML = transcript.split(' ').map((e) => '<span>' + e + '</span>').join(' ');
+					$recognition.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
+					$recognition.setAttribute('confidence', (parseInt(res.confidence * 100) + '%'));
 
 					var clear = (text) => text.replace(/[^\w\s]|_/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
-					var phrase = clear($phrase.textContent);
-					var transcript = clear(res.transcript);
+					phrase = clear(phrase);
+					transcript = clear(transcript);
+
+					$panel_recognition.setAttribute('mode', (transcript.length || 0) < phrase.length * 0.7 || phrase == transcript ? 'recognition' : 'compare');
 
 					var compare = '';
 					if (phrase != transcript) {
@@ -209,6 +234,8 @@ window.addEventListener('load', function() {
 			if (event.type != 'touchend' && event.type == 'mouseup' && event.which != 1)
 				return;
 
+			event.stopImmediatePropagation();
+
 			mediaRecorder.stop();
 			$buttons.listen.removeAttribute('hidden');
 			$buttons.record.removeAttribute('record');
@@ -221,5 +248,21 @@ window.addEventListener('load', function() {
 
 		$buttons.record.addEventListener(isMobile ? 'touchstart' : 'mousedown', startRecord);
 		$buttons.record.addEventListener(isMobile ? 'touchend' : 'mouseup', stopRecord);
+
+		$panel_recognition.addEventListener('click', function (event) {
+			var mode = this.getAttribute('mode');
+			this.setAttribute('mode', mode == 'recognition' && $compare.textContent.trim() ? 'compare' : 'recognition');	
+		})
 	}).catch(alert);
+
+	var num = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split(" ");
+	var tens = "twenty thirty forty fifty sixty seventy eighty ninety".split(" ");
+	
+	function num2text(n){
+	    if (n < 20) return num[n];
+	    var digit = n%10;
+	    if (n < 100) return tens[~~(n/10)-2] + (digit? ' ' + num[digit]: '');
+	    if (n < 1000) return num[~~(n/100)] +' hundred' + (n%100 == 0? '': ' ' + num2text(n%100));
+	    return num2text(~~(n/1000)) + ' thousand' + (n%1000 != 0? ' ' + num2text(n%1000): '');
+	}
 });

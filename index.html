@@ -25,34 +25,35 @@
 
 	<div id = "page-phrase" attention>
 		<div id = "attention">
+			<div id = "attention-content">
 			<p>Some troubles: speech recognition is unsupported or microphone is disabled.</p>
 			<p>Use Chrome browser.</p>
+			</div>
 		</div>
 		<div class = "circle plus close"></div>
-		<div id = "wrapper">
-			<div id = "panel-counter">
-				<div id = "button-prev-phrase" class = "button">&#9668;</div>
-				<div id = "phrase-number"></div>
-				<div id = "button-next-phrase" class = "button">&#9658;</div>
-			</div>
 
-			<div id = "panel-speak">
-				<div id = "voices"></div>
-				<label for="voice-speed"></label>
-				<input id = "voice-speed" name = "voice-speed" type="range" title = "Speed of generated speech" min = "0.5" max = "1.5" step = "0.1" value = "1"/>
-			</div>
+		<div id = "panel-counter">
+			<div id = "button-prev-phrase" class = "button-arrow">&#9668;</div>
+			<div id = "phrase-number"></div>
+			<div id = "button-next-phrase" class = "button-arrow">&#9658;</div>
+			<div id = "caption"></div>
+		</div>
 
+		<div id = "panel-phrase">
+			<div id = "voices"></div>
+			<label for="voice-speed"></label>
+			<input id = "voice-speed" name = "voice-speed" type="range" title = "Speed of generated speech" min = "0.5" max = "1.5" step = "0.1" value = "1"/>
 			<div id = "phrase"></div>
+		</div>
+
+		<div id = "panel-recognition">
 			<div id = "recognition" title = "Google Speech Recognition result and its cofficient of the recognition confidence">&nbsp;</div>
-			<div id = "recognition-confidence" title = "Recognition confidence"></div>
-			
+			<div id = "compare"></div>
 			<div id = "panel-record">
 				<div id = "button-listen" class = "button">Listen</div>
 				<div id = "button-record" class = "button">Record</div>	
-			</div>	
-			<div id = "compare"></div>
-
-		</div>	
+			</div>				
+		</div>
 	</div>
 
 	<div id = "page-help">
@@ -68,7 +69,7 @@
 		</ul>
 		<br>
 		<br>
-		<p>If you have any questions or comments, just let me know <a href="lb.im@yandex.ru">lb.im@yandex.ru</a> or visit <a href = "https://github.com/little-brother/english-speech">project page</a>.</p>	 
+		<p>If you have any questions, comments or suggestions, just let me know <a href="lb.im@yandex.ru">lb.im@yandex.ru</a> or visit <a href = "https://github.com/little-brother/english-speech">project page</a>.</p>	 
 	</div>
 </body>
 </html>
