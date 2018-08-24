@@ -48,8 +48,8 @@ body * {font-size: 24px;}
 
 
 
-.circle {border-radius: 100%; position: relative; display: inline-block; width: 60px; height: 60px;}
+.circle {border-radius: 100%; position: relative; display: inline-block; width: 40px; height: 40px;}
 .circle.plus:before, .circle.plus:after {content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #bbb;}
-.circle.plus:before {width: 10px; margin: 10px auto;}
-.circle.plus:after {margin: auto 10px; height: 10px;}
+.circle.plus:before {width: 6px; margin: 6px auto;}
+.circle.plus:after {margin: auto 6px; height: 6px;}
 

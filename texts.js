@@ -1,5 +1,4 @@
 var texts = {
-
 'The Little Prince':
 `The first night, I sleep on the sand. 
 I am a thousand miles from a land with people. 

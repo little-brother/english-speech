@@ -181,10 +181,10 @@ window.addEventListener('load', function() {
 		mediaRecorder.addEventListener('dataavailable', event => chunks.push(event.data));
 
 		function startRecord(event) {
+			event.stopImmediatePropagation();
+
 			if (event.type != 'touchstart' && event.type == 'mousedown' && event.which != 1)
 				return;
-
-			event.stopImmediatePropagation();
 
 			$buttons.record.setAttribute('record', true);
 			$compare.innerHTML = '';
@@ -197,11 +197,13 @@ window.addEventListener('load', function() {
 			mediaRecorder.start();
 			if (recognition) {
 				recognition.lang = isMobile ? 'en-US' : 'en-UK';
+				recognition.interimResults = false;
 				recognition.onresult = function (event) {
 					var res = event.results[0][0];
 
 					var phrase = $phrase.textContent.trim();
 					var transcript = (res.transcript || '').replace(/\d+/g, num2text);
+					transcript = homophones.replace(phrase, transcript);
 
 					$recognition.innerHTML = transcript.split(' ').map((e) => '<span>' + e + '</span>').join(' ');
 					$recognition.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
@@ -231,10 +233,10 @@ window.addEventListener('load', function() {
 		}
 
 		function stopRecord(event) {
+			event.stopImmediatePropagation();
+
 			if (event.type != 'touchend' && event.type == 'mouseup' && event.which != 1)
 				return;
-
-			event.stopImmediatePropagation();
 
 			mediaRecorder.stop();
 			$buttons.listen.removeAttribute('hidden');
@@ -255,8 +257,8 @@ window.addEventListener('load', function() {
 		})
 	}).catch(alert);
 
-	var num = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split(" ");
-	var tens = "twenty thirty forty fifty sixty seventy eighty ninety".split(" ");
+	var num = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split(' ');
+	var tens = 'twenty thirty forty fifty sixty seventy eighty ninety'.split(' ');
 	
 	function num2text(n){
 	    if (n < 20) return num[n];
