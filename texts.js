@@ -92,14 +92,14 @@ Build a model, write a blog or make an animation film.
 You will use a different part of your brains and will feel more energised as a result.`,
 
 'Tongue Twisters #1':
-`The thirty-three thieves thought that they thrilled the throne throughout Thursday.
+`The thirty three thieves thought that they thrilled the throne throughout Thursday.
 Seth at Sainsbury's sells thick socks.
 Whenever the weather is cold. Whenever the weather is hot. We'll weather the weather, whatever the weather, whether we like it or not.
 I wish to wish the wish you wish to wish, but if you wish the wish the witch wishes, I won't wish the wish you wish to wish.
 World Wide Web
 If Stu chews shoes, should Stu choose the shoes he chews?
 There those thousand thinkers were thinking how did the other three thieves go through.
-I scream, you scream, we all scream for icecream!
+I scream, you scream, we all scream for ice cream!
 Wayne went to Wales to watch walruses.
 Eleven benevolent elephants`,
 

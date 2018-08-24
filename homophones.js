@@ -75,6 +75,7 @@ var homophones = [
 	["cede", "seed"],
 	["ceiling", "sealing"],
 	["cell", "sell"],
+	["cells", "sells"],
 	["censer", "censor", "sensor"],
 	["cent", "scent", "sent"],
 	["cereal", "serial"],
@@ -82,6 +83,7 @@ var homophones = [
 	["check", "cheque"],
 	["choir", "quire"],
 	["chord", "cord"],
+	["chews", "choose"],
 	["cite", "sight", "site"],
 	["clack", "claque"],
 	["clew", "clue"],
@@ -119,6 +121,8 @@ var homophones = [
 	["dual", "duel"],
 	["earn", "urn"],
 	["eery", "eyrie"],
+	["energised", "energized"],
+	["everyday", "every day"],
 	["ewe", "yew", "you"],
 	["faint", "feint"],
 	["fah", "far"],
@@ -446,9 +450,10 @@ homophones.$words = {};
 homophones.forEach((e) => e.forEach((w) => homophones.$words[w] = e));
 
 homophones.replace = function (phrase, transcript) {
-	var phrase_words = phrase.split(' ');
+	var phrase_words = phrase.split(' ').map((w) => w.toLowerCase());
 	return transcript.split(' ').map(function(word, i) {
-		var ws = homophones.$words[word];
+		var w = word.toLowerCase();
+		var ws = homophones.$words[w];
 		if (!ws)
 			return word;
 
