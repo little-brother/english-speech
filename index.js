@@ -37,6 +37,7 @@ window.addEventListener('load', function() {
 	var $recognition = document.querySelector('#recognition');
 	var $compare = document.querySelector('#compare');
 	var $switch_mode = document.querySelector('#switch-mode');
+	var $upload = document.querySelector('#upload');	
 
 	var AudioPlayer = {
 		audio: null,
@@ -56,6 +57,7 @@ window.addEventListener('load', function() {
 
 	TEXTS.forEach((e) => e.text = e.text.split('\n').map((e2) => e2.trim()).join('\n'));
 	TEXTS.push({id: 'custom', name: 'Your text', text: localStorage.getItem('custom') || 'Input any text: one line is one phrase.'})
+	TEXTS.push({id: 'upload', name: 'Load from file...'});
 	
 	TEXTS.forEach(function (e, i) {
 		var $option = document.createElement('option');
@@ -66,9 +68,31 @@ window.addEventListener('load', function() {
 		texts[e.id] = e;
 	});
 
+	function loadFile() {
+		var file = $upload.files[0];
+		if (!file) 
+			return;
+		
+		var reader = new FileReader();
+		reader.onload = function(event) {
+			texts.custom.text = event.target.result;
+			$texts.dispatchEvent(new Event('change'));
+		};
+		reader.readAsText(file);
+	}
+	$upload.addEventListener('change', loadFile, false);
+
+
 	$texts.addEventListener('change', function (event) {
 		var e = texts[this.value];
 		$text.innerHTML = '';
+
+		if (e.id == 'upload') {
+			$texts.value = 'custom';
+			$texts.dispatchEvent(new Event('change'));
+			return $upload.click();
+		}
+
 		if (e.audio)
 			$text.innerHTML += '<audio controls = "controls"><source src="' + e.audio + '"/></audio>';
 		
