@@ -209,7 +209,7 @@ var TEXTS = [
 {
 	id: 17,
 	name: 'The Poem',
-	audio: '/audio/advanced-pronunciation-fun-english.mp3',
+	audio: 'audio/advanced-pronunciation-fun-english.mp3',
 	source: 'https://reallifeglobal.com/fun-english-advanced-pronunciation-exercise-test-your-skills/',
 	copyright: 'RealLife English',
 	text: `I take it you already know 
@@ -245,7 +245,7 @@ var TEXTS = [
 {
 	id: 18,
 	name: 'G. N. Trenité - The Chaos',
-	audio: '/audio/G. N. Trenité - The Chaos.mp3',
+	audio: 'audio/G. N. Trenité - The Chaos.mp3',
 	text: 
 	`Dearest creature in creation,
 	Study English pronunciation.
