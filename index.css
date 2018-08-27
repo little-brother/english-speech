@@ -6,7 +6,8 @@ body * {font-size: 24px;}
 .close {position: absolute !important; cursor: pointer; transform: rotate(45deg); z-index: 10; top: 2px; right: 2px;}
 
 #page-text {position: absolute; top: 10px; bottom: 80px; left: 10px; right: 10px; text-align: center;}
-#page-text #text {height: 100%; width: 100%; padding: 20px; box-sizing: border-box; margin: 1px; border: 1px #bbb solid;}
+#page-text #text {height: 100%; width: 100%; padding: 20px; box-sizing: border-box; margin: 1px; border: 1px #bbb solid; white-space: pre; text-align: left; overflow-y: auto;}
+#page-text #text audio {display: block; margin-bottom: 10px;}
 #page-text #control {width:100%; text-align:center; margin-top: 5px;}
 #page-text #control td#selector {width: 100%; padding: 0 15px;}
 #page-text #control #texts {border: 1px #bbb solid; width: 100%; height: 43px; margin-top: 2px;}
@@ -17,13 +18,15 @@ body * {font-size: 24px;}
 #page-help ul {margin-left: 40px;}
 
 #page-phrase {display: none; position: absolute; top: 10px; bottom: 10px; right: 10px; left: 10px; text-align: center;} 
-//#page-phrase {justify-content: center; align-items: center; display: none; position: absolute; top: 10px; bottom: 10px; right: 10px; left: 10px; text-align: center;} 
 #page-phrase[attention] #attention {display: table; width: 100%; height: 100%;}
 #page-phrase[attention] #attention-content {display: table-cell; vertical-align: middle;}
 
 #page-phrase[attention] > *:not([id="attention"]) {display: none !important;}
 #page-phrase:not([attention]) #attention {display: none;}
-#page-phrase #panel-counter {display: inline-block;}
+#page-phrase #panel-counter {display: inline-block;  z-index: 1;}
+#page-phrase #panel-counter #phrase-number-input:not(:focus) {opacity: 0; width: 0;}
+#page-phrase #panel-counter #phrase-number-input:focus {opacity: 1; width: 100px; text-align: center; background: #fff;}
+#page-phrase #panel-counter #phrase-number-input:focus ~ #phrase-number {display: none;}
 #page-phrase #panel-counter .button-arrow {cursor: pointer;}
 #page-phrase #panel-counter > * {display: inline-block; font-size: 56px;}
 #page-phrase #panel-counter #caption {display: block; font-size: 14px;}
@@ -32,7 +35,9 @@ body * {font-size: 24px;}
 #page-phrase #panel-phrase #voices {display: inline-block;}
 #page-phrase #panel-phrase #voices:empty ~ #voice-speed {display: none;}
 #page-phrase #panel-phrase .button {padding: 0px; margin: 0 5px; font-size: 36px; color: #bbb;}
+#page-phrase #panel-phrase .button[current="true"] {color: #0b0;}
 #page-phrase #panel-phrase #phrase {border-bottom: 1px solid #bbb; padding: 10px;}
+#page-phrase #panel-phrase #phrase > * { -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
 #page-phrase #panel-recognition {position: absolute; left: 0; right: 0; top: 50%; bottom: 0;}
 #page-phrase #panel-recognition #recognition {color: #b00;}
 #page-phrase #panel-recognition #recognition[confidence]:not([confidence="0%"])::after {content: attr(confidence); position: relative; bottom: -10px; font-size: 10px;}
@@ -46,6 +51,11 @@ body * {font-size: 24px;}
 #page-phrase #panel-recognition #panel-record #button-listen {background: #66f; color: #fff;}
 #page-phrase #panel-recognition #panel-record #button-listen[hidden] {display: none;}
 
+#page-voices {position: absolute; top: 10px; bottom: 10px; left: 10px; right: 10px; text-align: center; display: none; padding-top: 10px;}
+#page-voices #panel-voices > * {display: block; width: 100%;}
+#page-voices #panel-voices .button::after {content: attr(title); padding-left: 10px;}
+#page-voices #panel-voices .button[current="true"] {background-image: linear-gradient(to right, #eee, #fff);}
+#page-voices #panel-voices #voice-speed {margin-top: 30px;}
 
 
 .circle {border-radius: 100%; position: relative; display: inline-block; width: 40px; height: 40px;}

@@ -1,5 +1,6 @@
 window.addEventListener('load', function() {
 	var audio, phrase_no;
+	var texts = {};
 	var phrases = [];
 	var dmp = new diff_match_patch();
 	dmp.Diff_Timeout = parseFloat(100);	
@@ -10,6 +11,7 @@ window.addEventListener('load', function() {
 	var $pages = {
 		text: document.querySelector('#page-text'),
 		phrase: document.querySelector('#page-phrase'),
+		voices: document.querySelector('#page-voices'), 
 		help: document.querySelector('#page-help') 
 	}	
 
@@ -27,6 +29,8 @@ window.addEventListener('load', function() {
 	var $texts = document.querySelector('#texts');
 	var $phrase = document.querySelector('#phrase');
 	var $phrase_number = document.querySelector('#phrase-number');
+	var $phrase_number_input = document.querySelector('#phrase-number-input');
+	var $panel_phrase = document.querySelector('#panel-phrase');	
 	var $voices = document.querySelector('#voices');
 	var $voice_speed = document.querySelector('#voice-speed');
 	var $panel_recognition = document.querySelector('#panel-recognition');	
@@ -34,17 +38,77 @@ window.addEventListener('load', function() {
 	var $compare = document.querySelector('#compare');
 	var $switch_mode = document.querySelector('#switch-mode');
 
-	for (var name in texts) {
-		var $option = document.createElement('option');
-		$option.setAttribute('value', name);
-		$option.innerHTML = name;
-		$texts.appendChild($option);
-	};
+	var AudioPlayer = {
+		audio: null,
+		play: function (url, from, to) {
+			this.stop();
+			this.audio = new Audio(url);
+			this.currentTime = from || 0;
+			this.audio.ontimeupdate = () => audio.currentTime > (to || this.audio.duration) ? this.stop() : null;
+			this.audio.play();
+		},
+		stop: function () {
+			if (this.audio && !this.audio.paused)
+				this.audio.pause();
+			delete this.audio;	
+		} 
+	}	
 
-	$texts.addEventListener('change', (event) => $text.value = texts[event.target.value]);
-	var current_text_no = localStorage && localStorage.getItem('text_no') || $texts.value;
-	$text.innerHTML = texts[current_text_no];
-	$texts.value = current_text_no;
+	TEXTS.forEach((e) => e.text = e.text.split('\n').map((e2) => e2.trim()).join('\n'));
+	TEXTS.push({id: 'custom', name: 'Your text', text: localStorage.getItem('custom') || 'Input any text: one line is one phrase.'})
+	
+	TEXTS.forEach(function (e, i) {
+		var $option = document.createElement('option');
+		$option.setAttribute('value', e.id);
+		$option.innerHTML = e.name;
+		$texts.appendChild($option);
+
+		texts[e.id] = e;
+	});
+
+	$texts.addEventListener('change', function (event) {
+		var e = texts[this.value];
+		$text.innerHTML = '';
+		if (e.audio)
+			$text.innerHTML += '<audio controls = "controls"><source src="' + e.audio + '"/></audio>';
+		
+		$text.innerHTML += e.text;
+		$text.setAttribute('contenteditable', e.id == 'custom');
+	});
+	$texts.value = localStorage.getItem('text-id') || $texts.children[0].value;
+	$texts.dispatchEvent(new Event('change'));
+
+	$phrase.addEventListener('click', () => $voices.querySelector('*[current="true"]').dispatchEvent(new Event('click')));
+
+	if (isMobile) {
+		$phrase_number_input.setAttribute('type', 'number');
+		$phrase.addEventListener('contextmenu', function (event) {
+			event.stopImmediatePropagation();
+			showPage('voices');
+		});
+		var $panel = $pages.phrase.querySelector('#panel-voices');
+		$pages.voices.appendChild($panel);
+
+		$phrase_number_input.addEventListener('focus', function () {
+			$panel_phrase.style.display = 'none';
+			$panel_recognition.style.display = 'none';
+		});
+
+		$phrase_number_input.addEventListener('blur', function () {
+			$panel_phrase.style.display = 'block';
+			$panel_recognition.style.display = 'block';
+		});
+	}
+
+	$phrase_number.addEventListener('click', function () {
+		$phrase_number_input.value = phrase_no + 1;
+		$phrase_number_input.focus();
+	});
+
+	$phrase_number_input.addEventListener('keypress', function (event) {
+  		if (event.keyCode == 13 && !isNaN(this.value)) 	
+			setPhrase(this.value - 1);
+	});
 
 	function setPhrase(no) {
 		if (no < 0)
@@ -54,61 +118,62 @@ window.addEventListener('load', function() {
 			return setPhrase(phrases.length - 1);
 
 		$pages.phrase.style.display = 'block';
-		$phrase.innerHTML = phrases[no].split(' ').map((e) => '<span>' + e + '</span>').join(' ');
+		$phrase.innerHTML = phrases[no].split(' ').map((e) => e.indexOf('<') == -1 ? '<span>' + e + '</span>' : e).join(' ');
 		$phrase.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
 		$phrase_number.innerHTML = (no + 1) + '/' + phrases.length;
 		$buttons.prev_phrase.style.visibility = no == 0 ? 'hidden' : 'visible';
 		$buttons.next_phrase.style.visibility = no == phrases.length - 1 ? 'hidden' : 'visible';
-		$voice_speed.value = localStorage && localStorage.getItem('voice-speed') || 1;
+		$voice_speed.value = localStorage.getItem('voice-speed') || 1;
 		$recognition.innerHTML = '';
 		$recognition.removeAttribute('correct');
 		$recognition.removeAttribute('confidence');
 		$compare.innerHTML = '';
 		$buttons.listen.setAttribute('hidden', true);
 		$buttons.record.removeAttribute('record');
+		$phrase_number_input.blur();
 
 		phrase_no = no;
 	}
 
 	function speakWord (event) {
 		event.stopImmediatePropagation();
-		var evt = new CustomEvent('speak-word', {detail: this.textContent});
+		var evt = new CustomEvent('speak-text', {detail: this.textContent});
 		document.dispatchEvent(evt);
 	}
 
 	$buttons.continue.addEventListener('click', function () {
-		if (localStorage)
-			localStorage.setItem('text_no', $texts.value);
+		var id = $texts.value;
+		localStorage.setItem('text-id', id);
+			
+		if (id == 'custom') {
+			var text = $text.innerText.split('\n').map((e2) => e2.trim()).join('\n');
+			localStorage.setItem('custom', text);
+			texts.custom.text = text;	
+		}
 
-		phrases = $text.value.split('\n').map((e) => e.trim());
+		var player = $text.querySelector('audio');
+		if (player)
+			player.pause();
 
+		phrases = texts[id].text.split('\n').map((e) => e.trim()).filter((e) => !!e);
 		$pages.text.style.display = 'none';
-		$pages.phrase.querySelector('#caption').innerHTML = $texts.value;
+		$pages.phrase.querySelector('#caption').innerHTML = texts[id].name;
 		setPhrase(0);
 	});
 
 	if (window.speechSynthesis) {
 		var voices = [];
-		var current_voice = localStorage && localStorage.getItem('voice') || 2;
-		$voice_speed.addEventListener('input', (event) => localStorage && localStorage.setItem('voice-speed', event.target.value));
+		var current_voice = localStorage.getItem('voice');
+		$voice_speed.addEventListener('input', (event) => localStorage.setItem('voice-speed', event.target.value));
 
-		function speakPhrase(event) {
-			current_voice = event.target.getAttribute('voice') || 2;
-			if (localStorage)
-				localStorage.setItem('voice', current_voice);
+		document.addEventListener('speak-text', (event) => speakText(event.detail));
 
-			var utterance = new SpeechSynthesisUtterance(document.querySelector('#phrase').textContent);
-			utterance.voice = voices[current_voice];
-			utterance.rate = $voice_speed.value || 1;
-			speechSynthesis.speak(utterance);			
-		}
-
-		document.addEventListener('speak-word', function (event) {
-			var utterance = new SpeechSynthesisUtterance(event.detail);
+		function speakText(text) {
+			var utterance = new SpeechSynthesisUtterance(text);
 			utterance.voice = voices[current_voice];
 			utterance.rate = $voice_speed.value || 1;
 			speechSynthesis.speak(utterance);
-		})
+		};
 
 		function loadVoices () {
 			$voices.innerHTML = '';
@@ -117,15 +182,33 @@ window.addEventListener('load', function() {
 				if (e.lang.indexOf('en') == 0 && (e.lang.indexOf('US') != -1 || e.lang.indexOf('UK') != -1 || e.lang.indexOf('GB') != -1)) {
 					var $voice = document.createElement('div');
 					$voice.setAttribute('class', 'button speak');
+					$voice.setAttribute('current', i == current_voice);
 					$voice.setAttribute('voice', i);
 					$voice.setAttribute('title', e.name);
 					$voice.innerHTML = '&#1010' + ($voices.children.length + 2) + ';'; 
 					$voices.appendChild($voice);
 				}	
 			});
+
+			if (!$voices.querySelector('*[current="true"]') && $voices.children.length > 0) {
+				var $e = $voices.children[0];
+				$e.setAttribute('current', true);
+				current_voice = $e.getAttribute('voice');
+			}
 			
 			for (var i = 0; i < $voices.children.length; i++) 
-				$voices.children[i].addEventListener('click', speakPhrase);
+				$voices.children[i].addEventListener('click', function (event) {
+					var voice = this.getAttribute('voice');
+					if (current_voice == voice) 
+						return speechSynthesis.speaking ? speechSynthesis.cancel() : speakText($phrase.textContent);
+					
+					$voices.querySelector('*[current="true"]').removeAttribute('current');
+					$voices.querySelector('*[voice="' + voice + '"]').setAttribute('current', true);	
+
+					current_voice = voice;
+					localStorage.setItem('voice', voice);
+					speakText($phrase.textContent);
+				});
 		}
 		
 		loadVoices();
@@ -135,39 +218,44 @@ window.addEventListener('load', function() {
 	}
 	
 	$buttons.listen.addEventListener('click', function (event) {
+		event.stopImmediatePropagation();
+
 		if (!audio)
 			return;
 
-		event.stopImmediatePropagation();
-
 		var url = URL.createObjectURL(audio);
-		new Audio(url).play();
+		AudioPlayer.play(url);
 	});
+
+	function showPage(page) {
+		for (var p in $pages)
+			$pages[p].style.display = 'none';
+
+		$pages[page].style.display = 'block';
+		AudioPlayer.stop();
+	}
 	
-	function closePage() {
-		$pages.text.style.display = 'block';
-		$pages.phrase.style.display = 'none';
-		$pages.help.style.display = 'none';
-	} 
-	document.querySelectorAll('.close').forEach(($e) => $e.addEventListener('click', closePage));
+	document.querySelectorAll('.close').forEach(function ($e) {
+		var back = $e.getAttribute('back') || 'text';
+		$e.addEventListener('click', () => showPage(back));
+	});
 
 	history.pushState({}, '', window.location.pathname);
 	window.addEventListener('popstate', function(event) {
 		if ($pages.text.style.display == 'block')
 			return history.back();
 
+		if ($pages.voices.style.display == 'block')
+			return showPage('phrase');
+
 		history.pushState(null, null, window.location.pathname);
-		closePage();
+		showPage('text');
 	}, false);
 
 	$buttons.prev_phrase.addEventListener('click', () => setPhrase(phrase_no - 1));
 	$buttons.next_phrase.addEventListener('click', () => setPhrase(phrase_no + 1));
 
-	function showHelp() {
-		$pages.text.style.display = 'none';
-		$pages.help.style.display = 'block';
-	}
-	$buttons.help.addEventListener('click', showHelp);
+	$buttons.help.addEventListener('click', () => showPage('help'));
 	
 	navigator.mediaDevices.getUserMedia({audio: true}).then (function (stream) {
 		var recognition = ('webkitSpeechRecognition' in window) ? new webkitSpeechRecognition() : null;
