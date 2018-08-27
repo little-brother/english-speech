@@ -82,7 +82,6 @@ window.addEventListener('load', function() {
 	}
 	$upload.addEventListener('change', loadFile, false);
 
-
 	$texts.addEventListener('change', function (event) {
 		var e = texts[this.value];
 		$text.innerHTML = '';
@@ -122,8 +121,17 @@ window.addEventListener('load', function() {
 			$panel_phrase.style.display = 'block';
 			$panel_recognition.style.display = 'block';
 		});
-	}
 
+		var touch = {start: 0, end: 0};
+		$panel_recognition.addEventListener('touchstart', (event) => touch.start = event.changedTouches[0].screenX, false);
+		$panel_recognition.addEventListener('touchend', function (event) {
+			touch.end = event.changedTouches[0].screenX;
+				
+			if (Math.abs(touch.start - touch.end) > 20)
+			    setPhrase(phrase_no + (touch.start < touch.end ? -1 : 1));
+		})
+	}
+   
 	$phrase_number.addEventListener('click', function () {
 		$phrase_number_input.value = phrase_no + 1;
 		$phrase_number_input.focus();

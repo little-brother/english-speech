@@ -454,7 +454,7 @@ homophones.$words = {};
 homophones.forEach((e) => e.forEach((w) => homophones.$words[w] = e));
 
 homophones.replace = function (phrase, transcript) {
-	var phrase_words = phrase.split(' ').map((w) => w.toLowerCase());
+	var phrase_words = phrase.split(' ').map((w) => w.toLowerCase().replace(/(^\W*)|(\W*$)/g, ''));
 	return transcript.split(' ').map(function(word, i) {
 		var w = word.toLowerCase();
 		var ws = homophones.$words[w];
