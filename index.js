@@ -41,19 +41,58 @@ window.addEventListener('load', function() {
 
 	var AudioPlayer = {
 		audio: null,
+		timer: null,
+		playing: false,
 		play: function (url, from, to) {
-			this.stop();
-			this.audio = new Audio(url);
-			this.currentTime = from || 0;
-			this.audio.ontimeupdate = () => audio.currentTime > (to || this.audio.duration) ? this.stop() : null;
-			this.audio.play();
+			var audio = $text.querySelector('#audio-player');	
+			if (!audio)
+				return;
+			
+			AudioPlayer.stop();
+
+			if (audio.readyState) 
+				audio.currentTime = from || 0;
+			else 
+				audio.oncanplay = () => (audio.oncanplay = null) && (audio.currentTime = from || 0);
+
+			if (to) 
+				this.timer = setTimeout(() => AudioPlayer.stop(), (to - from) * 1000);
+			audio.play();
+			this.playing = true;
+			this.audio = audio;
+			PhraseHighlighter.start();
 		},
 		stop: function () {
 			if (this.audio && !this.audio.paused)
 				this.audio.pause();
-			delete this.audio;	
+				
+			clearTimeout(this.timer);
+			this.playing = false;
+			PhraseHighlighter.stop();
 		} 
 	}	
+
+	var PhraseHighlighter = {
+		timers: [],
+		start: function (delay) {
+			var self = this;
+			var text = texts[$texts.value]; 
+			if (text.timemarks && text.timemarks[phrase_no] && text.timemarks[phrase_no] instanceof Array) {
+				text.timemarks[phrase_no].forEach(function (time, i, times) {
+					var timer = setTimeout(function () {
+						if (i > 0)
+							$phrase.querySelector('*[current]').removeAttribute('current');
+						$phrase.children[i].setAttribute('current', true);
+					}, (time - times[0]) * 1000 + (delay || 0))
+					self.timers.push(timer);
+				})
+			}
+		},
+		stop: function () {
+			$phrase.querySelectorAll('*').forEach(($e) => $e.removeAttribute('current'));
+			this.timers.forEach(clearTimeout);
+		}
+	}
 
 	TEXTS.forEach((e) => e.text = e.text.split('\n').map((e2) => e2.trim()).join('\n'));
 	TEXTS.push({id: 'custom', name: 'Your text', text: localStorage.getItem('custom') || 'Input any text: one line is one phrase.'})
@@ -93,7 +132,7 @@ window.addEventListener('load', function() {
 		}
 
 		if (e.audio)
-			$text.innerHTML += '<audio controls = "controls"><source src="' + e.audio + '"/></audio>';
+			$text.innerHTML += '<audio id = "audio-player" controls = "controls"><source src="' + e.audio + '"/></audio>';
 		
 		$text.innerHTML += e.text;
 		$text.setAttribute('contenteditable', e.id == 'custom');
@@ -101,7 +140,19 @@ window.addEventListener('load', function() {
 	$texts.value = localStorage.getItem('text-id') || $texts.children[0].value;
 	$texts.dispatchEvent(new Event('change'));
 
-	$phrase.addEventListener('click', () => $voices.querySelector('*[current="true"]').dispatchEvent(new Event('click')));
+	$phrase.addEventListener('click', function () {
+		var text = texts[$texts.value];
+		if (!text.audio || !text.timemarks) 
+			return $voices.querySelector('*[current="true"]').dispatchEvent(new Event('click'));
+
+		if (AudioPlayer.playing)	
+			return AudioPlayer.stop();
+		
+		var getMark = (phrase_no) => text.timemarks[phrase_no] instanceof Array ? text.timemarks[phrase_no][0] : text.timemarks[phrase_no]; 
+		var from = getMark(phrase_no);
+		var to = phrase_no < phrases.length - 1 ? getMark(phrase_no + 1) : null;	
+		AudioPlayer.play(text.audio, from, to);
+	});
 
 	if (isMobile) {
 		$phrase_number_input.setAttribute('type', 'number');
@@ -350,6 +401,8 @@ window.addEventListener('load', function() {
 				recognition.interimResults = false;
 				recognition.start();
 			}
+
+			PhraseHighlighter.start(500);
 		}
 
 		function stopRecord(event) {
@@ -366,6 +419,7 @@ window.addEventListener('load', function() {
 				recognition.stop();
 
 			setTimeout(() => audio = new Blob(chunks, {type : 'audio/ogg; codecs=opus'}), 500);
+			PhraseHighlighter.stop();
 		}
 
 		$buttons.record.addEventListener(isMobile ? 'touchstart' : 'mousedown', startRecord);

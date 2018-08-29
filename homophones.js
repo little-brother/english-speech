@@ -278,7 +278,7 @@ var homophones = [
 	["none", "nun"],
 	["od", "odd"],
 	["ode", "owed"],
-	["oh", "owe"],
+	["o", "oh", "owe"],
 	["one", "won"],
 	["packed", "pact"],
 	["packs", "pax"],

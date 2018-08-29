@@ -41,6 +41,7 @@ body * {font-size: 24px;}
 #page-phrase #panel-phrase .button[current="true"] {color: #0b0;}
 #page-phrase #panel-phrase #phrase {border-bottom: 1px solid #bbb; padding: 10px;}
 #page-phrase #panel-phrase #phrase > * { -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
+#page-phrase #panel-phrase #phrase > *[current] {box-shadow: 0 1px 0px #ccc;}
 #page-phrase #panel-recognition {position: absolute; left: 0; right: 0; top: 50%; bottom: 0;}
 #page-phrase #panel-recognition #recognition {color: #b00;}
 #page-phrase #panel-recognition #recognition[confidence]:not([confidence="0%"])::after {content: attr(confidence); position: relative; bottom: -10px; font-size: 10px;}
