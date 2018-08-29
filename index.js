@@ -1,5 +1,5 @@
 window.addEventListener('load', function() {
-	var audio, phrase_no;
+	var userAudio, phrase_no;
 	var texts = {};
 	var phrases = [];
 	var dmp = new diff_match_patch();
@@ -308,11 +308,14 @@ window.addEventListener('load', function() {
 	$buttons.listen.addEventListener('click', function (event) {
 		event.stopImmediatePropagation();
 
-		if (!audio)
+		if (!userAudio || !userAudio.duration)
 			return;
 
-		var url = URL.createObjectURL(audio);
-		AudioPlayer.play(url);
+		if (userAudio.paused)
+			return userAudio.play();
+
+		userAudio.pause();
+		userAudio.currentTime = 0;
 	});
 
 	function showPage(page) {
@@ -368,7 +371,7 @@ window.addEventListener('load', function() {
 			$recognition.removeAttribute('confidence');
 
 			chunks = [];
-			audio = null;
+			userAudio = null;
 
 			mediaRecorder.start();
 			if (recognition) {
@@ -423,7 +426,11 @@ window.addEventListener('load', function() {
 			if (recognition)
 				recognition.stop();
 
-			setTimeout(() => audio = new Blob(chunks, {type : 'audio/ogg; codecs=opus'}), 500);
+			setTimeout(function () {
+				var blob = new Blob(chunks, {type : 'audio/ogg; codecs=opus'});
+				var url = URL.createObjectURL(blob);
+				userAudio = new Audio(url);
+			}, 500);
 			PhraseHighlighter.stop();
 		}
 
