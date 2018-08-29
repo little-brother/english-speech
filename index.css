@@ -40,7 +40,7 @@ body * {font-size: 24px;}
 #page-phrase #panel-phrase .button {padding: 0px; margin: 0 5px; font-size: 36px; color: #bbb;}
 #page-phrase #panel-phrase .button[current="true"] {color: #0b0;}
 #page-phrase #panel-phrase #phrase {border-bottom: 1px solid #bbb; padding: 10px;}
-#page-phrase #panel-phrase #phrase[animation]::after {display: block; width: 0; margin: 0; padding: 0; content: ''; animation: animationPause 1s linear; animation-iteration-count: 1; background: red; height: 3px; position: absolute; right: 0; left: 0; bottom: -1px;}
+#page-phrase #panel-phrase #phrase[animation]::after {display: block; width: 0; margin: 0; padding: 0; content: ''; animation: animationPause 0.5s linear; animation-iteration-count: 1; background: red; height: 3px; position: absolute; right: 0; left: 0; bottom: -1px;}
 @keyframes animationPause {0% {width: 100%;} 100% {width: 0;}}
 #page-phrase #panel-phrase #phrase > * { -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
 #page-phrase #panel-phrase #phrase > *[current] {box-shadow: 0 1px 0px #ccc;}

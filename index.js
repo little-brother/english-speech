@@ -56,8 +56,8 @@ window.addEventListener('load', function() {
 			else 
 				audio.oncanplay = () => (audio.oncanplay = null) && (audio.currentTime = from || 0);
 
-			if (to) 
-				this.timer = setTimeout(() => AudioPlayer.stop(), (to - from) * 1000);
+			to = to || audio.duration || 1;
+			this.timer = setTimeout(() => AudioPlayer.stop(), (to - from) * 1000);
 			audio.play();
 			this.playing = true;
 			this.audio = audio;
@@ -407,7 +407,7 @@ window.addEventListener('load', function() {
 				recognition.start();
 			}
 
-			PhraseHighlighter.start(1000);
+			PhraseHighlighter.start(500);
 		}
 
 		function stopRecord(event) {
