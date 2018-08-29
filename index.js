@@ -49,6 +49,7 @@ window.addEventListener('load', function() {
 				return;
 			
 			AudioPlayer.stop();
+			audio.onended = () => self.stop();
 
 			if (audio.readyState) 
 				audio.currentTime = from || 0;
@@ -60,6 +61,7 @@ window.addEventListener('load', function() {
 			audio.play();
 			this.playing = true;
 			this.audio = audio;
+			
 			PhraseHighlighter.start();
 		},
 		stop: function () {
@@ -75,20 +77,23 @@ window.addEventListener('load', function() {
 	var PhraseHighlighter = {
 		timers: [],
 		start: function (delay) {
-			var self = this;
+			PhraseHighlighter.stop();
+			if (delay)
+				$phrase.setAttribute('animation', true);
+							
 			var text = texts[$texts.value]; 
 			if (text.timemarks && text.timemarks[phrase_no] && text.timemarks[phrase_no] instanceof Array) {
 				text.timemarks[phrase_no].forEach(function (time, i, times) {
 					var timer = setTimeout(function () {
-						if (i > 0)
-							$phrase.querySelector('*[current]').removeAttribute('current');
+						$phrase.children[Math.max(i - 1, 0)].removeAttribute('current');
 						$phrase.children[i].setAttribute('current', true);
 					}, (time - times[0]) * 1000 + (delay || 0))
-					self.timers.push(timer);
+					PhraseHighlighter.timers.push(timer);
 				})
 			}
 		},
 		stop: function () {
+			$phrase.removeAttribute('animation');	
 			$phrase.querySelectorAll('*').forEach(($e) => $e.removeAttribute('current'));
 			this.timers.forEach(clearTimeout);
 		}
@@ -402,7 +407,7 @@ window.addEventListener('load', function() {
 				recognition.start();
 			}
 
-			PhraseHighlighter.start(500);
+			PhraseHighlighter.start(1000);
 		}
 
 		function stopRecord(event) {
