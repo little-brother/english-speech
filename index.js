@@ -77,20 +77,22 @@ window.addEventListener('load', function() {
 	var PhraseHighlighter = {
 		timers: [],
 		start: function (delay) {
+			var text = texts[$texts.value]; 
+			if (!(text.timemarks && text.timemarks[phrase_no] && text.timemarks[phrase_no] instanceof Array))
+				return;
+
 			PhraseHighlighter.stop();
 			if (delay)
 				$phrase.setAttribute('animation', true);
 							
-			var text = texts[$texts.value]; 
-			if (text.timemarks && text.timemarks[phrase_no] && text.timemarks[phrase_no] instanceof Array) {
-				text.timemarks[phrase_no].forEach(function (time, i, times) {
-					var timer = setTimeout(function () {
-						$phrase.children[Math.max(i - 1, 0)].removeAttribute('current');
-						$phrase.children[i].setAttribute('current', true);
-					}, (time - times[0]) * 1000 + (delay || 0))
-					PhraseHighlighter.timers.push(timer);
-				})
-			}
+			text.timemarks[phrase_no].forEach(function (time, i, times) {
+				var timer = setTimeout(function () {
+					$phrase.children[Math.max(i - 1, 0)].removeAttribute('current');
+					$phrase.children[i].setAttribute('current', true);
+				}, (time - times[0]) * 1000 + (delay || 0))
+				PhraseHighlighter.timers.push(timer);
+			});
+			
 		},
 		stop: function () {
 			$phrase.removeAttribute('animation');	
@@ -410,7 +412,7 @@ window.addEventListener('load', function() {
 				recognition.start();
 			}
 
-			PhraseHighlighter.start(500);
+			PhraseHighlighter.start(300);
 		}
 
 		function stopRecord(event) {
