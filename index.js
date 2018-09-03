@@ -1,10 +1,11 @@
 window.addEventListener('load', function() {
-	var userAudio, phrase_no;
 	var texts = {};
+
 	var phrases = [];
-	var dmp = new diff_match_patch();
-	dmp.Diff_Timeout = parseFloat(100);	
-	dmp.Diff_EditCost = parseFloat(4);
+	var phrase_no;
+
+	var audioContext = new AudioContext();
+	var userAudio, textAudioBuffer;
 
 	var isMobile = (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
@@ -36,6 +37,7 @@ window.addEventListener('load', function() {
 	var $panel_recognition = document.querySelector('#panel-recognition');	
 	var $recognition = document.querySelector('#recognition');
 	var $compare = document.querySelector('#compare');
+	var $audio_compare = document.querySelector('#audio-compare');
 	var $switch_mode = document.querySelector('#switch-mode');
 	var $upload = document.querySelector('#upload');	
 
@@ -61,8 +63,6 @@ window.addEventListener('load', function() {
 			audio.play();
 			this.playing = true;
 			this.audio = audio;
-			
-			PhraseHighlighter.start();
 		},
 		stop: function () {
 			if (this.audio && !this.audio.paused)
@@ -70,36 +70,8 @@ window.addEventListener('load', function() {
 				
 			clearTimeout(this.timer);
 			this.playing = false;
-			PhraseHighlighter.stop();
 		} 
 	}	
-
-	var PhraseHighlighter = {
-		timers: [],
-		start: function (delay) {
-			var text = texts[$texts.value]; 
-			if (!(text.timemarks && text.timemarks[phrase_no] && text.timemarks[phrase_no] instanceof Array))
-				return;
-
-			PhraseHighlighter.stop();
-			if (delay)
-				$phrase.setAttribute('animation', true);
-							
-			text.timemarks[phrase_no].forEach(function (time, i, times) {
-				var timer = setTimeout(function () {
-					$phrase.children[Math.max(i - 1, 0)].removeAttribute('current');
-					$phrase.children[i].setAttribute('current', true);
-				}, (time - times[0]) * 1000 + (delay || 0))
-				PhraseHighlighter.timers.push(timer);
-			});
-			
-		},
-		stop: function () {
-			$phrase.removeAttribute('animation');	
-			$phrase.querySelectorAll('*').forEach(($e) => $e.removeAttribute('current'));
-			this.timers.forEach(clearTimeout);
-		}
-	}
 
 	TEXTS.forEach((e) => e.text = e.text.split('\n').map((e2) => e2.trim()).join('\n'));
 	TEXTS.push({id: 'custom', name: 'Your text', text: localStorage.getItem('custom') || 'Input any text: one line is one phrase.'})
@@ -155,10 +127,7 @@ window.addEventListener('load', function() {
 		if (AudioPlayer.playing)	
 			return AudioPlayer.stop();
 		
-		var getMark = (phrase_no) => text.timemarks[phrase_no] instanceof Array ? text.timemarks[phrase_no][0] : text.timemarks[phrase_no]; 
-		var from = getMark(phrase_no);
-		var to = phrase_no < phrases.length - 1 ? getMark(phrase_no + 1) : null;	
-		AudioPlayer.play(text.audio, from, to);
+		AudioPlayer.play(text.audio, text.timemarks[phrase_no], text.timemarks[phrase_no + 1]);
 	});
 
 	if (isMobile) {
@@ -201,6 +170,9 @@ window.addEventListener('load', function() {
 	});
 
 	function setPhrase(no) {
+		if (phrase_no == no)
+			return;	
+
 		if (no < 0)
 			return setPhrase(0);
 
@@ -214,6 +186,7 @@ window.addEventListener('load', function() {
 		$buttons.prev_phrase.style.visibility = no == 0 ? 'hidden' : 'visible';
 		$buttons.next_phrase.style.visibility = no == phrases.length - 1 ? 'hidden' : 'visible';
 		$voice_speed.value = localStorage.getItem('voice-speed') || 1;
+		$panel_recognition.removeAttribute('mode');	
 		$recognition.innerHTML = '';
 		$recognition.removeAttribute('correct');
 		$recognition.removeAttribute('confidence');
@@ -233,20 +206,29 @@ window.addEventListener('load', function() {
 
 	$buttons.continue.addEventListener('click', function () {
 		var id = $texts.value;
+		var e = texts[id];
 		localStorage.setItem('text-id', id);
 			
 		if (id == 'custom') {
-			var text = $text.innerText.split('\n').map((e2) => e2.trim()).join('\n');
-			localStorage.setItem('custom', text);
-			texts.custom.text = text;	
+			var customText = $text.innerText.split('\n').map((e2) => e2.trim()).join('\n');
+			localStorage.setItem('custom', customText);
+			texts.custom.text = customText;	
 		}
 
-		var player = $text.querySelector('audio');
-		if (player)
-			player.pause();
+		if (e.audio)
+			$text.querySelector('audio').pause(); 
+
+		if (e.audio && e.timemarks) {
+			var request = new XMLHttpRequest();
+			request.open('GET', e.audio, true);
+			request.responseType = 'arraybuffer';
+			request.onload = () => audioContext.decodeAudioData(request.response, (buffer) => textAudioBuffer = buffer);
+			request.send();
+		} else 
+			textAudioBuffer = null;
 
 		phrases = texts[id].text.split('\n').map((e) => e.trim()).filter((e) => !!e);
-		$pages.text.style.display = 'none';
+		showPage('phrase');
 		$pages.phrase.querySelector('#caption').innerHTML = texts[id].name;
 		setPhrase(0);
 	});
@@ -368,6 +350,7 @@ window.addEventListener('load', function() {
 				return;
 
 			$buttons.record.setAttribute('record', true);
+			$panel_recognition.setAttribute('mode', 'recognition');
 			$compare.innerHTML = '';
 			$recognition.innerHTML = '';
 			$recognition.removeAttribute('confidence');
@@ -377,6 +360,10 @@ window.addEventListener('load', function() {
 
 			mediaRecorder.start();
 			if (recognition) {
+				var dmp = new diff_match_patch();
+				dmp.Diff_Timeout = parseFloat(100);	
+				dmp.Diff_EditCost = parseFloat(4);
+
 				recognition.lang = isMobile ? 'en-US' : 'en-UK';
 				recognition.interimResults = false;
 				recognition.onresult = function (event) {
@@ -411,8 +398,6 @@ window.addEventListener('load', function() {
 				recognition.interimResults = false;
 				recognition.start();
 			}
-
-			PhraseHighlighter.start(300);
 		}
 
 		function stopRecord(event) {
@@ -432,16 +417,65 @@ window.addEventListener('load', function() {
 				var blob = new Blob(chunks, {type : 'audio/ogg; codecs=opus'});
 				var url = URL.createObjectURL(blob);
 				userAudio = new Audio(url);
-			}, 500);
-			PhraseHighlighter.stop();
-		}
 
+				if (textAudioBuffer) {
+					var $canvas = $audio_compare.querySelector('canvas');
+					var h = Math.min($panel_recognition.offsetHeight, 100);
+					var w = $panel_recognition.offsetWidth;
+					$canvas.width = w;
+					$canvas.height = h;
+					var ctx = $canvas.getContext('2d');
+					ctx.clearRect(0, 0, w, h);
+					var tms = texts[$texts.value].timemarks;
+
+					function drawAudioBuffer(buffer, is_text) {
+						var data = buffer.getChannelData(0);
+
+						var from = is_text ? buffer.sampleRate * tms[phrase_no] : 0.3 * buffer.sampleRate;
+						var to = is_text && buffer.sampleRate * tms[phrase_no + 1] || (data.length - 1);
+						data = data.slice(from, to);
+	
+						var min = Math.min(...data);
+						var max = Math.max(...data);
+						data = data.map((e) => (e - min) * 2/ (max - min) - 1)
+
+						// remove silence
+						from = data.findIndex((e) => e > 0.25);
+						to = data.length - 1;
+						while(data[to] < 0.25 && to > 0)
+							to--;
+						data = data.slice(from, to);
+				
+						ctx.strokeStyle = is_text ? '#bbb' : 'rgba(0, 0, 255, 0.3)';
+				
+						var step = Math.ceil(data.length / w) ;
+						var pos = is_text ? h * 0.25 : h * 0.75;
+						ctx.beginPath();
+						for (var i = 0; i < w; i++) {
+							var chunk = data.slice(i * step, (i + 1) * step);	
+							ctx.moveTo(i, pos - Math.min(...chunk) * h / 4);
+							ctx.lineTo(i, pos - Math.max(...chunk) * h / 4);
+						}
+						ctx.stroke();
+					}
+
+					fetch(url)
+						.then(response => response.arrayBuffer())
+						.then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+						.then(buffer => drawAudioBuffer(textAudioBuffer, true) || drawAudioBuffer(buffer));
+				}
+			}, 500);
+		}
+		$buttons.record.addEventListener('click', (event) => event.stopImmediatePropagation());
 		$buttons.record.addEventListener(isMobile ? 'touchstart' : 'mousedown', startRecord);
 		$buttons.record.addEventListener(isMobile ? 'touchend' : 'mouseup', stopRecord);
 
 		$panel_recognition.addEventListener('click', function (event) {
 			var mode = this.getAttribute('mode');
-			this.setAttribute('mode', mode == 'recognition' && $compare.textContent.trim() ? 'compare' : 'recognition');	
+			this.setAttribute('mode', 
+				mode == 'recognition' && $compare.textContent.trim() ? 'compare' :
+				mode == 'recognition' && !$compare.textContent.trim() ? 'audio-compare' :
+				'recognition');
 		})
 	}).catch(alert);
 
