@@ -4,12 +4,13 @@ window.addEventListener('load', function() {
 	var phrases = [];
 	var phrase_no;
 
-	var audioContext = new AudioContext();
+	var audioContext = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
 	var userAudio, textAudioBuffer;
 
-	var isMobile = (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+	var isMobile = (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator && navigator.userAgent || ''));
 
 	var $pages = {
+		error: document.querySelector('#page-error'),
 		text: document.querySelector('#page-text'),
 		phrase: document.querySelector('#page-phrase'),
 		voices: document.querySelector('#page-voices'), 
@@ -39,7 +40,11 @@ window.addEventListener('load', function() {
 	var $compare = document.querySelector('#compare');
 	var $audio_compare = document.querySelector('#audio-compare');
 	var $switch_mode = document.querySelector('#switch-mode');
-	var $upload = document.querySelector('#upload');	
+	var $upload = document.querySelector('#upload');
+
+	$pages.error.removeAttribute('error');
+	if (typeof webkitSpeechRecognition == 'undefined')
+		return $pages.error.setAttribute('error', 'speech-recognition');
 
 	var AudioPlayer = {
 		audio: null,
@@ -170,7 +175,7 @@ window.addEventListener('load', function() {
 	});
 
 	function setPhrase(no) {
-		if (phrase_no == no)
+		if (phrase_no == no && $phrase.textContent == phrases[phrase_no])
 			return;	
 
 		if (no < 0)
@@ -218,7 +223,7 @@ window.addEventListener('load', function() {
 		if (e.audio)
 			$text.querySelector('audio').pause(); 
 
-		if (e.audio && e.timemarks) {
+		if (audioContext && e.audio && e.timemarks) {
 			var request = new XMLHttpRequest();
 			request.open('GET', e.audio, true);
 			request.responseType = 'arraybuffer';
@@ -233,7 +238,7 @@ window.addEventListener('load', function() {
 		setPhrase(0);
 	});
 
-	if (window.speechSynthesis) {
+	if (typeof speechSynthesis !== 'undefined') {
 		var voices = [];
 		var current_voice = localStorage.getItem('voice');
 		$voice_speed.addEventListener('input', (event) => localStorage.setItem('voice-speed', event.target.value));
@@ -284,8 +289,8 @@ window.addEventListener('load', function() {
 		}
 		
 		loadVoices();
-		if (window.speechSynthesis.onvoiceschanged !== undefined) {
-			window.speechSynthesis.onvoiceschanged = loadVoices;
+		if (speechSynthesis.onvoiceschanged !== undefined) {
+			speechSynthesis.onvoiceschanged = loadVoices;
 		}
 	}
 	
@@ -333,15 +338,15 @@ window.addEventListener('load', function() {
 	$buttons.help.addEventListener('click', () => showPage('help'));
 	
 	navigator.mediaDevices.getUserMedia({audio: true}).then (function (stream) {
-		var recognition = ('webkitSpeechRecognition' in window) ? new webkitSpeechRecognition() : null;
-		if (!recognition) 
-			return;
-		
-		$pages.phrase.removeAttribute('attention');
+		showPage('text');		
+ 			
+		var recognition = new webkitSpeechRecognition();
 		var chunks;
 
 		var mediaRecorder = new MediaRecorder(stream);
 		mediaRecorder.addEventListener('dataavailable', event => chunks.push(event.data));
+
+		var time;
 
 		function startRecord(event) {
 			event.stopImmediatePropagation();
@@ -349,6 +354,10 @@ window.addEventListener('load', function() {
 			if (event.type != 'touchstart' && event.type == 'mousedown' && event.which != 1)
 				return;
 
+			if ($buttons.record.hasAttribute('record'))
+				return;
+
+			time = new Date().getTime();
 			$buttons.record.setAttribute('record', true);
 			$panel_recognition.setAttribute('mode', 'recognition');
 			$compare.innerHTML = '';
@@ -358,52 +367,60 @@ window.addEventListener('load', function() {
 			chunks = [];
 			userAudio = null;
 
+			var dmp = new diff_match_patch();
+			dmp.Diff_Timeout = parseFloat(100);	
+			dmp.Diff_EditCost = parseFloat(4);
+
 			mediaRecorder.start();
-			if (recognition) {
-				var dmp = new diff_match_patch();
-				dmp.Diff_Timeout = parseFloat(100);	
-				dmp.Diff_EditCost = parseFloat(4);
 
-				recognition.lang = isMobile ? 'en-US' : 'en-UK';
-				recognition.interimResults = false;
-				recognition.onresult = function (event) {
-					var res = event.results[0][0];
+			recognition.lang = isMobile ? 'en-US' : 'en-UK';
+			recognition.interimResults = false;
+			recognition.continuous = false;
 
-					var phrase = $phrase.textContent.trim();
-					var transcript = (res.transcript || '').replace(/\d+/g, num2text);
-					transcript = homophones.replace(phrase, transcript);
+			recognition.onresult = function (event) {
+				var res = event.results[0][0];
 
-					$recognition.innerHTML = transcript.split(' ').map((e) => '<span>' + e + '</span>').join(' ');
-					$recognition.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
-					$recognition.setAttribute('confidence', (parseInt(res.confidence * 100) + '%'));
+				var phrase = $phrase.textContent.trim();
+				var transcript = (res.transcript || '').replace(/\d+/g, num2text);
+				transcript = homophones.replace(phrase, transcript);
 
-					var clear = (text) => text.replace(/[^\w\s]|_/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
-					phrase = clear(phrase);
-					transcript = clear(transcript);
+				$recognition.innerHTML = transcript.split(' ').map((e) => '<span>' + e + '</span>').join(' ');
+				$recognition.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
+				$recognition.setAttribute('confidence', (parseInt(res.confidence * 100) + '%'));
 
-					$panel_recognition.setAttribute('mode', (transcript.length || 0) < phrase.length * 0.7 || phrase == transcript ? 'recognition' : 'compare');
+				var clear = (text) => text.replace(/[^\w\s]|_/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+				phrase = clear(phrase);
+				transcript = clear(transcript);
 
-					var compare = '';
-					if (phrase != transcript) {
-						var d = dmp.diff_main(phrase, transcript);
-						dmp.diff_cleanupEfficiency(d);
-						compare = dmp.diff_prettyHtml(d);
-					}
-					
-					$compare.innerHTML = compare;
-					$recognition.setAttribute('correct', phrase == transcript);
+				$panel_recognition.setAttribute('mode', (transcript.length || 0) < phrase.length * 0.7 || phrase == transcript ? 'recognition' : 'compare');
+
+				var compare = '';
+				if (phrase != transcript) {
+					var d = dmp.diff_main(phrase, transcript);
+					dmp.diff_cleanupEfficiency(d);
+					compare = dmp.diff_prettyHtml(d);
 				}
-
-				recognition.continuous = false;
-				recognition.interimResults = false;
-				recognition.start();
+				
+				$compare.innerHTML = compare;
+				$recognition.setAttribute('correct', phrase == transcript);
 			}
+
+			recognition.onerror = function (event) {
+				$panel_recognition.setAttribute('mode', 'recognition');
+				$recognition.removeAttribute('confidence');
+				$recognition.innerHTML = 'Error: ' + event.message;
+			}	
+
+			recognition.start();			
 		}
 
 		function stopRecord(event) {
 			event.stopImmediatePropagation();
 
 			if (event.type != 'touchend' && event.type == 'mouseup' && event.which != 1)
+				return;
+
+			if (new Date().getTime() - time < 300)
 				return;
 
 			mediaRecorder.stop();
@@ -418,7 +435,7 @@ window.addEventListener('load', function() {
 				var url = URL.createObjectURL(blob);
 				userAudio = new Audio(url);
 
-				if (textAudioBuffer) {
+				if (audioContext && textAudioBuffer) {
 					var $canvas = $audio_compare.querySelector('canvas');
 					var h = Math.min($panel_recognition.offsetHeight, 100);
 					var w = $panel_recognition.offsetWidth;
@@ -466,6 +483,7 @@ window.addEventListener('load', function() {
 				}
 			}, 500);
 		}
+
 		$buttons.record.addEventListener('click', (event) => event.stopImmediatePropagation());
 		$buttons.record.addEventListener(isMobile ? 'touchstart' : 'mousedown', startRecord);
 		$buttons.record.addEventListener(isMobile ? 'touchend' : 'mouseup', stopRecord);
@@ -474,10 +492,10 @@ window.addEventListener('load', function() {
 			var mode = this.getAttribute('mode');
 			this.setAttribute('mode', 
 				mode == 'recognition' && $compare.textContent.trim() ? 'compare' :
-				mode == 'recognition' && !$compare.textContent.trim() ? 'audio-compare' :
+				mode == 'recognition' && !$compare.textContent.trim() && textAudioBuffer ? 'audio-compare' :
 				'recognition');
 		})
-	}).catch(alert);
+	}).catch((err) => $pages.error.setAttribute('error', 'microphone'));
 
 	var num = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split(' ');
 	var tens = 'twenty thirty forty fifty sixty seventy eighty ninety'.split(' ');

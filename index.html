@@ -10,6 +10,22 @@
 	<script src = "index.js"></script>
 </head>
 <body>
+	<div id = "page-error" error = "java-script">
+		<div id = "java-script">
+			<p>There is some Java Script error.</p>
+			<p>Use <a href = "https://www.google.ru/intl/en_uk/chrome/">Chrome browser</a> with version above 52 to avoid problems.</p>
+			<p>On old Android devices: don't use search widget. It runs WebView, not Chrome.</p> 
+		</div>	
+		<div id = "speech-recognition">
+			<p>Speech recognition unsupported.</p>
+			<p>Use <a href = "https://www.google.ru/intl/en_uk/chrome/">Chrome browser</a> with version above 52 to avoid problems.</p>
+		</div>
+		<div id = "microphone">
+			<p>Unable to access microphone.</p>
+			<p>Make sure the microphone is connected. Reload page and grant access to the microphone.</p>	
+		</div>
+	</div>	
+
 	<div id = "page-text">
 		<div id = "text" autocomplete = "off"></div>
 		<table id = "control">
@@ -22,13 +38,7 @@
 		<input id = "upload" type="file" />
 	</div>
 
-	<div id = "page-phrase" attention>
-		<div id = "attention">
-			<div id = "attention-content">
-			<p>Some troubles: speech recognition is unsupported or microphone is disabled.</p>
-			<p>Use Chrome browser.</p>
-			</div>
-		</div>
+	<div id = "page-phrase">
 		<div class = "circle plus close" back = "text"></div>
 
 		<div id = "panel-counter">
@@ -68,16 +78,18 @@
 		<div class = "circle plus close" back = "text"></div>
 		<p>Welcome!</p>
 		<br>	
-		<p>This is a demo application to practice English speech. Only <a href = "https://www.google.ru/intl/en_uk/chrome/">Chrome browser</a> is supported.<p>
+		<p>This is an application to practice English speech.</p>
+		<p>Only <a href = "https://www.google.ru/intl/en_uk/chrome/">Chrome browser</a> is supported. Use 52 or highter version to avoid problems.</p>
 		<br>	
 		<ul>
 			<li>Select text what you want to read aloud and click "Continue".</li>
 			<li>On next screen push "Record" and hold to record your voice.</li>
 			<li>The voice will be recognized via <a href = "https://developer.mozilla.org/ru/docs/Web/API/Web_Speech_API">Web Speech API</a> and you will see how perfectly you speak.</li>
+			<li>Watch <a href = "https://www.youtube.com/embed/99W7RqJ8Cns">the clip</a> to see the app in action.</li>
 		</ul>
 		<br>
 		<p><b>Keep in mind</b><br>Recognition does not always work well.<br>Some phrases can be recognized incorrectly even with perfect pronunciation.</p>
-		<br>
+		<br>	
 		<p>If you have any questions, comments or suggestions, just let me know <a href="lb.im@yandex.ru">lb.im@yandex.ru</a> or visit <a href = "https://github.com/little-brother/english-speech">project page</a>.</p>	 
 	</div>
 </body>

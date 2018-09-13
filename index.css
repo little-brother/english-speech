@@ -5,7 +5,13 @@ body * {font-size: 24px;}
 .button {cursor: pointer; display: inline-block; padding: 10px 30px; border-radius: 10px; -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
 .close {position: absolute !important; cursor: pointer; transform: rotate(45deg); z-index: 10; top: 2px; right: 2px;}
 
-#page-text {position: absolute; top: 10px; bottom: 80px; left: 10px; right: 10px; text-align: center;}
+#page-error {position: absolute; top: 10px; bottom: 10px; left: 10px; right: 10px;}
+#page-error > div {display: none;}
+#page-error[error = "java-script"] #java-script {display: block;}
+#page-error[error = "speech-recognition"] #speech-recognition {display: block;}
+#page-error[error = "microphone"] #microphone {display: block;}
+
+#page-text {position: absolute; top: 10px; bottom: 80px; left: 10px; right: 10px; text-align: center; display: none;}
 #page-text #text {height: 100%; width: 100%; padding: 20px; box-sizing: border-box; margin: 1px; border: 1px #bbb solid; white-space: pre; text-align: left; overflow-y: auto;}
 #page-text #text audio {display: block; margin-bottom: 10px;}
 #page-text #control {width:100%; text-align:center; margin-top: 5px;}
@@ -21,11 +27,6 @@ body * {font-size: 24px;}
 #page-help ul {margin-left: 40px;}
 
 #page-phrase {display: none; position: absolute; top: 10px; bottom: 10px; right: 10px; left: 10px; text-align: center;} 
-#page-phrase[attention] #attention {display: table; width: 100%; height: 100%;}
-#page-phrase[attention] #attention-content {display: table-cell; vertical-align: middle;}
-
-#page-phrase[attention] > *:not([id="attention"]) {display: none !important;}
-#page-phrase:not([attention]) #attention {display: none;}
 #page-phrase #panel-counter {display: inline-block;  z-index: 1;}
 #page-phrase #panel-counter #phrase-number-input:not(:focus) {opacity: 0; width: 0;}
 #page-phrase #panel-counter #phrase-number-input:focus {opacity: 1; width: 100px; text-align: center; background: #fff;}
