@@ -254,7 +254,7 @@ window.addEventListener('load', function() {
 
 		function loadVoices () {
 			$voices.innerHTML = '';
-			voices = window.speechSynthesis.getVoices();
+			voices = speechSynthesis.getVoices();
 			voices.forEach(function(e, i) {
 				if (e.lang.indexOf('en') == 0 && (e.lang.indexOf('US') != -1 || e.lang.indexOf('UK') != -1 || e.lang.indexOf('GB') != -1)) {
 					var $voice = document.createElement('div');
