@@ -1,72 +1,104 @@
-* {margin: 0px; padding: 0px;} 
-html,body { padding: 0; margin: 0; font: normal "Helvetica Neue", Helvetica, Arial, sans-serif;}
-body * {font-size: 24px;}
+* {margin: 0; padding: 0;} 
+html, body { padding: 0; margin: 0; height: 100%;}
+input, textarea {font-size: 24px;}
 
-.button {cursor: pointer; display: inline-block; padding: 10px 30px; border-radius: 10px; -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
-.close {position: absolute !important; cursor: pointer; transform: rotate(45deg); z-index: 10; top: 2px; right: 2px;}
+.page {font-size: 24px;}
+.page:not([current]) {display: none !important;}
+.page.center {height: 100%; display: grid; }
+.page.center  .content {margin: auto; position: relative;}
+.page.absolute {position: absolute; top: 0; bottom: 0; left: 0; right: 0;}
+.page.absolute .content {margin: auto; position: absolute; top: 48px; right: 0; left: 0; bottom: 0; overflow: auto;}
 
-#page-error {position: absolute; top: 10px; bottom: 10px; left: 10px; right: 10px;}
-#page-error > div {display: none;}
-#page-error[error = "java-script"] #java-script {display: block;}
-#page-error[error = "speech-recognition"] #speech-recognition {display: block;}
-#page-error[error = "microphone"] #microphone {display: block;}
+.page .caption {position: fixed; text-align: center; right: 0; left: 0; color: #fff; background: #aaf; font-weight: bold; padding: 10px; text-transform: uppercase; z-index: 10;}
+.page .caption > * {display: inline-block;}
+.page .caption .left {float: left; cursor: pointer;}
 
-#page-text {position: absolute; top: 10px; bottom: 80px; left: 10px; right: 10px; text-align: center; display: none;}
-#page-text #text {height: 100%; width: 100%; padding: 20px; box-sizing: border-box; margin: 1px; border: 1px #bbb solid; white-space: pre; text-align: left; overflow-y: auto;}
-#page-text #text audio {display: block; margin-bottom: 10px;}
-#page-text #control {width:100%; text-align:center; margin-top: 5px;}
-#page-text #control td#selector {width: 100%; padding: 0 15px;}
-#page-text #control #texts {border: 1px #bbb solid; width: 100%; height: 43px; margin-top: 2px;}
-#page-text #control #texts option[value = "custom"] {background: #eee;} 
-#page-text #control #texts option[value = "upload"] {background: #ddd;}
-#page-text #control #button-continue {background: #0a0; color: #fff; display: inline-block; float: right;}
-#page-text #control #button-help {background: #66f; color: #fff;display: inline-block; float: left;}
-#page-text #upload {display: none;}
+.page .content-padding {padding: 20px;}
 
-#page-help {position: absolute; top: 10px; bottom: 10px; left: 10px; right: 10px; text-align: left; display: none; padding-top: 10px;}
-#page-help ul {margin-left: 40px;}
+#page-start .content {top: -20px; text-align: center;}
+#page-start #logo {text-decoration: none; color: #000; width: 200px; display: inline-block; margin: 0; font-size: 20px; vertical-align: top; margin-top: 15px; margin-bottom: 15px;}
+#page-start #logo::before {content: ''; display: inline-block; background-size: contain; background-position: center; background-repeat: no-repeat; background-image: url(https://www.google.com/chrome/static/images/chrome-logo.svg); width: 160px; height: 160px; }
+#page-start #loading {color: #bbb; padding: 10px 20px; margin-top: 10px; position: relative; left: 10px;} 
+#page-start #loading ~ #button-start {display: none !important;}
+#page-start #loading ~ #microphone {display: none !important;}
+#page-start #microphone ~ #button-start {display: none;}
+#page-start #microphone {text-align: center;}
+#page-start #button-start {padding: 10px 20px; margin-top: 10px; text-align: center; cursor: pointer; border-radius: 5px; background: #0f0;}
 
-#page-phrase {display: none; position: absolute; top: 10px; bottom: 10px; right: 10px; left: 10px; text-align: center;} 
-#page-phrase #panel-counter {display: inline-block;  z-index: 1;}
-#page-phrase #panel-counter #phrase-number-input:not(:focus) {opacity: 0; width: 0;}
-#page-phrase #panel-counter #phrase-number-input:focus {opacity: 1; width: 100px; text-align: center; background: #fff;}
-#page-phrase #panel-counter #phrase-number-input:focus ~ #phrase-number {display: none;}
-#page-phrase #panel-counter .button-arrow {cursor: pointer;}
-#page-phrase #panel-counter > * {display: inline-block; font-size: 56px;}
-#page-phrase #panel-counter #caption {display: block; font-size: 14px;}
+#page-main #button-text-selector {display: inline-block; float: left; cursor: pointer; margin-left: 5px; position: relative; height: 28px; width: 30px; top: 1px;}
+#page-main #button-text-selector::before {content: ""; position: absolute; left: 0; width: 30px; height: 5px; background: #fff; box-shadow: 0 10px 0 0 #fff, 0 20px 0 0 #fff;}
 
-#page-phrase #panel-phrase { margin-bottom: 10px; position: absolute; left: 0; right: 0; bottom: 50%;}
-#page-phrase #panel-phrase #voices {display: inline-block;}
-#page-phrase #panel-phrase #voices:empty ~ #voice-speed {display: none;}
-#page-phrase #panel-phrase .button {padding: 0px; margin: 0 5px; font-size: 36px; color: #bbb;}
-#page-phrase #panel-phrase .button[current="true"] {color: #0b0;}
-#page-phrase #panel-phrase #phrase {border-bottom: 1px solid #bbb; padding: 10px;}
-#page-phrase #panel-phrase #phrase > * { -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
-#page-phrase #panel-phrase #phrase > *[current] {box-shadow: 0 1px 0px #ccc;}
-#page-phrase #panel-recognition {position: absolute; left: 0; right: 0; top: 50%; bottom: 0;}
-#page-phrase #panel-recognition #recognition {color: #b00;}
-#page-phrase #panel-recognition #recognition[confidence]:not([confidence="0%"])::after {content: attr(confidence); position: relative; bottom: -10px; font-size: 10px;}
-#page-phrase #panel-recognition #recognition[correct="true"] {color: #0b0;}
-#page-phrase #panel-recognition .result {display: none;}
-#page-phrase #panel-recognition[mode="recognition"] #recognition {display: block;}
-#page-phrase #panel-recognition[mode="compare"] #compare {display: block;}
-#page-phrase #panel-recognition[mode="audio-compare"] #audio-compare {display: block;}
+#page-main .content {margin: 10px; text-align: center;}
+#page-main #panel-counter {display: block;  z-index: 1; text-align: center;}
+#page-main #panel-counter #phrase-number-input {display: none; width: 100px; text-align: center; background: #fff;}
+#page-main #panel-counter #phrase-number-input:focus ~ #phrase-number {display: none;}
+#page-main #panel-counter .button-arrow {cursor: pointer;}
+#page-main #panel-counter > * {display: inline-block; font-size: 56px;}
+#page-main #panel-counter #caption {display: block; font-size: 14px;}
+#page-main #panel-phrase { margin-bottom: 10px; position: absolute; left: 0; right: 0; bottom: 50%;}
+#page-main #panel-phrase .button {padding: 0px; margin: 0 5px; font-size: 36px; color: #bbb;}
+#page-main #panel-phrase .button[current="true"] {color: #0b0;}
+#page-main #panel-phrase #phrase {border-bottom: 1px solid #bbb; padding: 10px;}
+#page-main #panel-phrase #phrase > * { -webkit-touch-callout:none; -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-tap-highlight-color:rgba(0,0,0,0);}
+#page-main #panel-phrase #phrase > *[current] {box-shadow: 0 1px 0px #ccc;}
+#page-main #panel-recognition {position: absolute; left: 0; right: 0; top: 50%; bottom: 0;}
+#page-main #panel-recognition #recognition {color: #b00;}
+#page-main #panel-recognition #recognition[confidence]:not([confidence="0%"])::after {content: attr(confidence); position: relative; bottom: -10px; font-size: 10px;}
+#page-main #panel-recognition #recognition[correct="true"] {color: #0b0;}
+#page-main #panel-recognition[mode="recognition"] #compare {display: none;}
+#page-main #panel-recognition[mode="compare"] #recognition {display: none;}
 
-#page-phrase #panel-recognition #panel-record {position: absolute; bottom: 0; width: 100%;}
-#page-phrase #panel-recognition #panel-record #button-record {background: #f00; color: #fff;}
-#page-phrase #panel-recognition #panel-record #button-record[record="true"] {background: #f99;}
-#page-phrase #panel-recognition #panel-record #button-listen {background: #66f; color: #fff;}
-#page-phrase #panel-recognition #panel-record #button-listen[hidden] {display: none;}
+#page-main #panel-recognition #panel-record {position: absolute; bottom: 0; width: 100%;}
+#page-main #panel-recognition #panel-record #button-record {background: #f00; color: #fff;}
+#page-main #panel-recognition #panel-record #button-record[record="true"] {background: #f99;}
+#page-main #panel-recognition #panel-record #button-listen {background: #66f; color: #fff;}
+#page-main #panel-recognition #panel-record #button-listen[hidden] {display: none;}
 
-#page-voices {position: absolute; top: 10px; bottom: 10px; left: 10px; right: 10px; text-align: center; display: none; padding-top: 10px;}
-#page-voices #panel-voices > * {display: block; width: 100%;}
-#page-voices #panel-voices .button::after {content: attr(title); padding-left: 10px;}
-#page-voices #panel-voices .button[current="true"] {background-image: linear-gradient(to right, #eee, #fff);}
-#page-voices #panel-voices #voice-speed {margin-top: 30px;}
+#page-text-selector .content > * {vertical-align: top; height: 100%; overflow-y: auto;}  
+#page-text-selector #texts {display: inline-block; float: left; width: 350px; border-right: 1px solid #bbb;}
+#page-text-selector #texts > div {padding: 10px; border-bottom: 1px dashed #bbb; cursor: pointer; position: relative;}
+#page-text-selector #texts > div[current] {background: #eef;}
+#page-text-selector #texts #view {display: none; color: #bbb;}
+#page-text-selector #texts #remove {position: absolute; top: 5px; right: 15px; z-index: 2; color: #bbb;}
+#page-text-selector #text-wrapper { width: auto; display: block; height: auto; max-height: 100%; min-height: 100%;} 
+#page-text-selector #text {white-space: pre; height: 100%; margin: 10px;}
+#page-text-selector #text audio {display: block; margin-bottom: 10px;}
+@media only screen and (max-width: 700px) {
+	#page-text-selector #texts {width: 100% !important;}
+	#page-text-selector #texts #view {display: inline-block !important; padding: 0 10px;}
+	#page-text-selector #text-wrapper {display: none !important;}
+}
+
+#page-text-add #caption-block {margin-right: 80px;}
+#page-text-add #caption {width: 100%; border: none; text-align: left;}
+#page-text-add #text-block {position: absolute; top: 60px; left: 20px; right: 20px; bottom: 28px;}
+#page-text-add #text {width: 100%; height: 100%; resize: none; border: none; border-top: 1px solid #bbb; padding: 10px 0; font-family: inherit;}
+#page-text-add #button-load-file {position: absolute; top: 20px; right: 25px; cursor: pointer;}
+
+#page-text-view .content {white-space: pre; overflow: auto;}
+#page-text-view .content audio {display: block; margin-bottom: 10px;}
+
+#page-option .selector {display: block; margin-bottom: 20px;}
+#page-option .selector::before{content: attr(title); display: block; text-align: left; margin-bottom: 5px;}
+#page-option .selector > div {display: inline-block; width: 100px; cursor: pointer; text-align: center; line-height: 28px;  font-size: 16px; background: #eee;}
+#page-option .selector > div[current]::before {content: '\2714'; margin-right: 5px;} 
+#page-option .selector > div[value="yes"] {background: #afa;}
+#page-option .selector > div[value="no"] {background: #faa;}
+#page-option .selector.col1 > div {width: 310px;}
+#page-option .selector.col2 > div {width: 153px;}
+#page-option .selector.col3 > div {width: 100px;}
+#page-option .selector.col4 > div {width: 73px;}
+#page-option .selector.col5 > div {width: 57px;}
+#page-option .selector.col6 > div {width: 47px;}
 
 
-.circle {border-radius: 100%; position: relative; display: inline-block; width: 40px; height: 40px;}
-.circle.plus:before, .circle.plus:after {content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #bbb;}
-.circle.plus:before {width: 6px; margin: 6px auto;}
-.circle.plus:after {margin: auto 6px; height: 6px;}
+#page-help .content a {text-decoration: none;}
+#page-help .content p {margin-bottom: 20px;}
+#page-help .content ul {margin-left: 30px;}
 
+.button {padding: 10px 30px; text-align: center; cursor: pointer; border-radius: 5px; background: #0f0; display: inline-block;}
+.caption-button {cursor: pointer; float: right; margin: 0 10px;}
+.close {position: absolute !important; cursor: pointer; transform: rotate(45deg); z-index: 10; border-radius: 100%; top: 2px; right: 2px; margin: 2px 10px; display: inline-block; width: 40px; height: 40px;}
+.close::before, .close::after {content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #fff;}
+.close::before {width: 6px; margin: 6px auto;}
+.close::after {margin: auto 6px; height: 6px;}

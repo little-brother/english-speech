@@ -2,97 +2,180 @@
 <html>
 <head>
 	<meta charset="UTF-8"/> 
-	<link href = "index.css" rel="stylesheet"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />	
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 
+	<link href = "index.css" rel="stylesheet"/>
+	<script type="text/javascript">
+		setTimeout(function() {
+			if(!document.querySelector('#page-start #loading')) 
+				return;
+
+			alert('There are some problems. Use the last version of Google Chrome browser to avoid them.\n\nMinimal supported Android version is 4.1 with Chrome 69.');	
+		}, 10000);
+	</script>
 	<script src = "diff_match_patch.js"></script>
-	<script src = "texts.js"></script>
-	<script src = "homophones.js"></script>
 	<script src = "index.js"></script>
 </head>
 <body>
-	<div id = "page-error" error = "java-script">
-		<div id = "java-script">
-			<p>There is some Java Script error.</p>
-			<p>Use <a href = "https://www.google.ru/intl/en_uk/chrome/">Chrome browser</a> with version above 52 to avoid problems.</p>
-			<p>On old Android devices: don't use search widget. It runs WebView, not Chrome.</p> 
+	<div id = "page-start" class = "page center" current>
+			<div class = "content">
+				<div id = "power-by">Powered by</div>
+				<a id = "logo" href = "https://www.google.ru/intl/en_uk/chrome/">Google Chrome<br>Speech Recognition</a>
+				<div id = "loading">Loading...</div>
+				<div id = "microphone">Allow access to microphone...</div>
+				<div id = "button-start">Start</div>
+			</div>
 		</div>	
-		<div id = "speech-recognition">
-			<p>Speech recognition unsupported.</p>
-			<p>Use <a href = "https://www.google.ru/intl/en_uk/chrome/">Chrome browser</a> with version above 52 to avoid problems.</p>
-		</div>
-		<div id = "microphone">
-			<p>Unable to access microphone.</p>
-			<p>Make sure the microphone is connected. Reload page and grant access to the microphone.</p>	
-		</div>
-	</div>	
+	</div>
 
-	<div id = "page-text">
-		<div id = "text" autocomplete = "off"></div>
-		<table id = "control">
-			<tr>
-			<td id = "button-help" class = "button">Help</td>
-			<td id = "selector"><select id = "texts"></select></td>
-			<td id = "button-continue" class = "button">Continue</td>
-		</tr>	
-		</table>
+	<div id = "page-main" class = "page absolute" back = "start">
+		<div class = "caption">
+			<div id = "button-text-selector"></div>
+			<div id = "button-help" class = "caption-button">Help</div>	
+			<div id = "button-option" class = "caption-button">Option</div>
+		</div>
+
+		<div class = "content">
+			<div id = "panel-counter">
+				<div id = "button-prev-phrase" class = "button-arrow">&#9668;</div>
+				<input id = "phrase-number-input" type = "number">
+				<div id = "phrase-number"></div>
+				<div id = "button-next-phrase" class = "button-arrow">&#9658;</div>
+				<div id = "caption"></div>
+			</div>
+	
+			<div id = "panel-phrase">
+				<div id = "phrase"></div>
+			</div>
+	
+			<div id = "panel-recognition">
+				<div id = "recognition" title = "Google Speech Recognition result and its cofficient of the recognition confidence">&nbsp;</div>
+				<div id = "compare"></div>
+				<div id = "panel-record">
+					<div id = "button-listen" class = "button">Listen</div>
+					<div id = "button-record" class = "button">Record</div>	
+				</div>				
+			</div>
+		</div>
+	</div>
+
+	<div id = "page-text-selector" class = "page absolute">
+		<div class = "caption">
+			<div id = "button-text-add" class = "left">New</div> 
+			<div class = "close" back = "main"></div>
+		</div>
+
+		<div class = "content">
+			<div id = "texts"></div>
+			<div id = "text-wrapper">
+				<div id = "text" autocomplete = "off"></div>
+			</div>
+		</div>
+	</div>
+
+	<div id = "page-text-add" class = "page absolute">
+		<div class = "caption">
+			<div id = "button-text-save" class = "left">Save</div>
+			<div class = "close" back = "text-selector"></div>
+		</div>
+
+		<div class = "content content-padding">
+			<div id = "caption-block">	
+				<input id = "caption" autocomplete = "off" placeholder = "Caption"></input>
+			</div>	
+			<div id = "button-load-file">File...</div>
+			<div id = "text-block">	
+				<textarea id = "text" autocomplete = "off" placeholder = "Text"></textarea>
+			</div>
+		</div>
+
 		<input id = "upload" type="file" />
 	</div>
 
-	<div id = "page-phrase">
-		<div class = "circle plus close" back = "text"></div>
-
-		<div id = "panel-counter">
-			<div id = "button-prev-phrase" class = "button-arrow">&#9668;</div>
-			<input id = "phrase-number-input">
-			<div id = "phrase-number"></div>
-			<div id = "button-next-phrase" class = "button-arrow">&#9658;</div>
-			<div id = "caption"></div>
+	<div id = "page-text-view" class = "page absolute">
+		<div class = "caption">
+			<div></div>
+			<div class = "close" back = "text-selector"></div>
 		</div>
 
-		<div id = "panel-phrase">
-			<div id = "panel-voices">
-				<div id = "voices"></div>
-				<label for="voice-speed"></label>
-				<input id = "voice-speed" name = "voice-speed" type="range" title = "Speed of generated speech" min = "0.5" max = "1.5" step = "0.1" value = "1"/>
+		<div class = "content content-padding">
+		</div>
+	</div>
+
+	<div id = "page-option" class = "page center">
+		<div class = "caption">
+			<div>Option</div> 
+			<div class = "close" back = "main"></div>
+		</div>
+		
+		<div class = "content">
+			<div id = "speech-auto-next" class = "selector col2" title = "Auto move to next phrase" default = "yes">
+				<div value = "no">No</div>
+				<div value = "yes">Yes</div>
 			</div>
-			<div id = "phrase"></div>
-		</div>
 
-		<div id = "panel-recognition">
-			<div id = "recognition" class = "result" title = "Google Speech Recognition result and its cofficient of the recognition confidence">&nbsp;</div>
-			<div id = "compare" class = "result"></div>
-			<div id = "audio-compare" class = "result"><canvas></canvas></div>
+			<div id = "speech-success-ring" class = "selector col2" title = "Success ring enable" default = "yes">
+				<div value = "no">No</div>
+				<div value = "yes">Yes</div>
+			</div>
 
-			<div id = "panel-record">
-				<div id = "button-listen" class = "button">Listen</div>
-				<div id = "button-record" class = "button">Record</div>	
-			</div>				
+			<div id = "speech-auto-read" class = "selector col2" title = "Auto read phrase" default = "no">
+				<div value = "no">No</div>
+				<div value = "yes">Yes</div>
+			</div>
+
+			<div id = "speech-voice" class = "selector" title = "Voice">
+			</div>
+
+			<div id = "speech-voice-speed" class = "selector col5" title = "Voice speed" default = "1">
+				<div value = "0.7">0.7</div>
+				<div value = "0.8">0.8</div>
+				<div value = "0.9">0.9</div>
+				<div value = "1">1</div>
+				<div value = "1.1">1.1</div>
+			</div>
 		</div>
 	</div>
 
-	<div id = "page-voices">
-		<div class = "circle plus close" back = "phrase"></div>
-	</div>
+	<div id = "page-help" class = "page absolute">
+		<div class = "caption">
+			<div>Help</div>
+			<div class = "close" back = "main"></div>
+		</div>
+		<div class = "content content-padding">
+			<p>This is an application to the practice of English speech via Google Speech Recognition API:
+				<ul>
+					<li>Push "Record"-button and hold it while you read aloud a phrase on the screen.</li>
+					<li>The voice will be recognized via <a href = "https://developer.mozilla.org/ru/docs/Web/API/Web_Speech_API">Web Speech API</a> and you will see differences between required and recognized phrases.</li>
+					<li>Listen your voice by click on "Listen"-button to detect defects in pronunciation.</li>
+				</ul>
+			</p>
+			<p>
+				The phrases are grouped in text: one line is one phrase.<br> 
+				You can choose a predefined text or create your own by click on a left icon in a header on the main screen.
+			</p>
+			<p><b>Keep in mind</b><br>
+				Recognition does not always work well.<br>
+				Some phrases can be recognized incorrectly even with perfect pronunciation.<br>
+			</p>
 
-	<div id = "page-help">
-		<div class = "circle plus close" back = "text"></div>
-		<p>Welcome!</p>
-		<br>	
-		<p>This is an application to practice English speech.</p>
-		<p>Only <a href = "https://www.google.ru/intl/en_uk/chrome/">Chrome browser</a> is supported. Use 52 or highter version to avoid problems.</p>
-		<br>	
-		<ul>
-			<li>Select text what you want to read aloud and click "Continue".</li>
-			<li>On next screen push "Record" and hold to record your voice.</li>
-			<li>The voice will be recognized via <a href = "https://developer.mozilla.org/ru/docs/Web/API/Web_Speech_API">Web Speech API</a> and you will see how perfectly you speak.</li>
-			<li>Watch <a href = "https://www.youtube.com/embed/99W7RqJ8Cns">the clip</a> to see the app in action.</li>
-		</ul>
-		<br>
-		<p><b>Keep in mind</b><br>Recognition does not always work well.<br>Some phrases can be recognized incorrectly even with perfect pronunciation.</p>
-		<br>	
-		<p>If you have any questions, comments or suggestions, just let me know <a href="mailto:lb.im@yandex.ru?subject=English speech site">lb.im@yandex.ru</a> or visit <a href = "https://github.com/little-brother/english-speech">project page</a>.</p>	 
+			<p>
+				<b>Recommendation</b><br>
+				Use a high-quality microphone to improve recognition.
+			</p>
+
+			<p>If you have any questions, comments or suggestions, just let me know <a href="lb.im@yandex.ru">lb.im@yandex.ru</a> or visit <a href = "https://github.com/little-brother/english-speech">project page</a>.</p>
+
+			<p>
+				<div>See also</div>
+				<ul>
+					<li><a href = "https://little-brother.github.io/english-words/" target = "_blank">word learning</a></li>
+					<li><a href = "https://little-brother.github.io/english-phrasal-verbs/" target = "_blank">learning of phrasal verbs</a></li>
+					<li><a href = "https://little-brother.github.io/english-cards/" target = "_blank">word learning by images (prototype)</a></li>
+				</ul>
+			</p>
+		</div>
 	</div>
 </body>
 </html>

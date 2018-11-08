@@ -1,352 +1,262 @@
 window.addEventListener('load', function() {
-	var texts = {};
+	if (typeof speechSynthesis == 'undefined' || typeof webkitSpeechRecognition == 'undefined')
+		return;
 
-	var phrases = [];
-	var phrase_no;
+	var texts, homophones;
+	var current_phrase_no, nextPhraseTimer;
+	var $success = new Audio('correct.mp3');	
 
-	var audioContext = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
-	var userAudio, textAudioBuffer;
+	Promise.all(['texts.txt', 'homophones.txt'].map(f => fetch(f).then(res => res.text())))	
+		.then(function (res) {
+			texts = parseTexts(res[0]);
+			homophones = parseHomophones(res[1]);
 
-	var isMobile = (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator && navigator.userAgent || ''));
+			for (id in texts)
+				addText(id, texts[id].name, texts[id].text);
 
-	var $pages = {
-		error: document.querySelector('#page-error'),
-		text: document.querySelector('#page-text'),
-		phrase: document.querySelector('#page-phrase'),
-		voices: document.querySelector('#page-voices'), 
-		help: document.querySelector('#page-help') 
-	}	
+			loadVoices(initOptions);
+			if (speechSynthesis.onvoiceschanged !== undefined) 
+				speechSynthesis.onvoiceschanged = () => loadVoices(initOptions);
 
-	var $buttons = {
-		continue: document.querySelector('#button-continue'),
-		record: document.querySelector('#button-record'),
-		listen: document.querySelector('#button-listen'),
-		prev_phrase: document.querySelector('#button-prev-phrase'),
-		next_phrase:document.querySelector('#button-next-phrase'),
-		record: document.querySelector('#button-record'),
-		help: document.querySelector('#button-help')
-	}
+			$('#page-start #loading').remove();
+		});
 
-	var $text = document.querySelector('#text');
-	var $texts = document.querySelector('#texts');
-	var $phrase = document.querySelector('#phrase');
-	var $phrase_number = document.querySelector('#phrase-number');
-	var $phrase_number_input = document.querySelector('#phrase-number-input');
-	var $panel_phrase = document.querySelector('#panel-phrase');	
-	var $voices = document.querySelector('#voices');
-	var $voice_speed = document.querySelector('#voice-speed');
-	var $panel_recognition = document.querySelector('#panel-recognition');	
-	var $recognition = document.querySelector('#recognition');
-	var $compare = document.querySelector('#compare');
-	var $audio_compare = document.querySelector('#audio-compare');
-	var $switch_mode = document.querySelector('#switch-mode');
-	var $upload = document.querySelector('#upload');
-
-	$pages.error.removeAttribute('error');
-	if (typeof webkitSpeechRecognition == 'undefined')
-		return $pages.error.setAttribute('error', 'speech-recognition');
-
-	var AudioPlayer = {
-		audio: null,
-		timer: null,
-		playing: false,
-		play: function (url, from, to) {
-			var audio = $text.querySelector('#audio-player');	
-			if (!audio)
-				return;
-			
-			AudioPlayer.stop();
-			audio.onended = () => self.stop();
-
-			if (audio.readyState) 
-				audio.currentTime = from || 0;
-			else 
-				audio.oncanplay = () => (audio.oncanplay = null) && (audio.currentTime = from || 0);
-
-			to = to || audio.duration || 1;
-			this.timer = setTimeout(() => AudioPlayer.stop(), (to - from) * 1000);
-			audio.play();
-			this.playing = true;
-			this.audio = audio;
-		},
-		stop: function () {
-			if (this.audio && !this.audio.paused)
-				this.audio.pause();
-				
-			clearTimeout(this.timer);
-			this.playing = false;
-		} 
-	}	
-
-	TEXTS.forEach((e) => e.text = e.text.split('\n').map((e2) => e2.trim()).join('\n'));
-	TEXTS.push({id: 'custom', name: 'Your text', text: localStorage.getItem('custom') || 'Input any text: one line is one phrase.'})
-	TEXTS.push({id: 'upload', name: 'Load from file...'});
-	
-	TEXTS.forEach(function (e, i) {
-		var $option = document.createElement('option');
-		$option.setAttribute('value', e.id);
-		$option.innerHTML = e.name;
-		$texts.appendChild($option);
-
-		texts[e.id] = e;
+	$('#page-start #button-start').addEventListener('click', function () {
+		setPage('main');
+		var $e = $('#page-text-selector #texts div[id = "' + localStorage.getItem('speech-current-text') + '"]') || $('#texts').children[0];
+		if ($e)
+			$e.click();
 	});
+	$('#page-option #speech-success-ring [value="yes"]').addEventListener('click', () => $success.play());
+	$('#page-main #button-help').addEventListener('click', () => setPage('help'));
+	$('#page-main #button-option').addEventListener('click', () => setPage('option'));
+	$('#page-main #button-text-selector').addEventListener('click', function () {
+		setPage('text-selector');
+		$('#page-text-selector #texts').scrollTop = $('#texts div[current]').offsetTop;
+	});
+	$('#page-main #phrase').addEventListener('click', (event) => speakText(event.target.textContent));
+	$('.close', $e => $e.addEventListener('click', () => setPage($e.getAttribute('back'))));
+
+	$('#page-text-selector #button-text-add').addEventListener('click', function () {
+		$('#page-text-add #caption').value = '';
+		$('#page-text-add #text').value = '';
+		setPage('text-add');
+	});
+
+	$('#page-text-add #button-text-save').addEventListener('click', function () {
+		setPage('text-selector');
+
+		var caption = $('#page-text-add #caption').value.trim() || 'My text';
+		var text = $('#page-text-add #text').value.trim();
+		if (!text) 
+			return;
+
+		var id = new Date().getTime();
+		texts[id] = {id, name, text, phrases: text.split('\n').map(e => e.trim()).filter(e => !!e)};
+		addText(id, caption, text);
+		$('#page-text-selector #texts div[id = "'+ id + '"]').click();
+		$('#page-text-selector #texts').scrollTop = $('#texts').scrollHeight;
+
+		var user_texts = (localStorage.getItem('speech-user-texts') || '');
+		var user_text = '\nid: ' + id + '\nname: ' + caption + '\n\n' + text;
+		localStorage.setItem('speech-user-texts', user_texts + '\n===' + user_text);
+	})
+	
+	function addText(id, name, text) {
+		var $div = document.createElement('div');
+		$div.setAttribute('id', id);
+		$div.innerHTML = name;
+		$div.addEventListener('click', function () {
+			if ($div.hasAttribute('current'))
+				return;
+	
+			for (var i = 0; i < $('#texts').children.length; i++)
+				$('#texts').children[i].removeAttribute('current');
+			this.setAttribute('current', true);
+
+			$('#text').innerHTML = text;
+			localStorage.setItem('speech-current-text', this.id);
+			setPhrase($('.page[current]').id == 'page-text-selector' ? 0 : localStorage.getItem('speech-phrase'));
+		});
+
+		var $view = document.createElement('div');
+		$view.setAttribute('id', 'view');
+		$view.innerHTML = '&#10148;';	
+		$view.addEventListener('click', function (event) {
+			event.stopImmediatePropagation();
+
+			if (!$div.hasAttribute('current')) 
+				$div.click();
+
+			setPage('text-view');
+			$('#page-text-view .caption').children[0].innerHTML = name;
+			$('#page-text-view .content').innerHTML = text;
+		})
+		$div.appendChild($view);
+
+		var $remove = document.createElement('div');
+		$remove.setAttribute('id', 'remove');
+		$remove.innerHTML = '&#10006;';
+		$remove.addEventListener('click', function (event) {
+			event.stopImmediatePropagation();
+
+			if (!confirm('Are you sure you want to remove "' + name +'"?'))
+				return;
+
+			if ($div.hasAttribute('current')) 
+				($div.previousSibling || $div.nextSibling).click();
+			
+			var deleted = localStorage.getItem('speech-deleted-texts') || '';
+			localStorage.setItem('speech-deleted-texts', deleted + ';' + id);
+			$div.remove();	
+		})
+		$div.appendChild($remove);
+
+		$('#texts').appendChild($div);
+	}
 
 	function loadFile() {
-		var file = $upload.files[0];
-		if (!file) 
-			return;
-		
-		var reader = new FileReader();
-		reader.onload = function(event) {
-			texts.custom.text = event.target.result;
-			$texts.dispatchEvent(new Event('change'));
-		};
-		reader.readAsText(file);
-	}
-	$upload.addEventListener('change', loadFile, false);
-
-	$texts.addEventListener('change', function (event) {
-		var e = texts[this.value];
-		$text.innerHTML = '';
-
-		if (e.id == 'upload') {
-			$texts.value = 'custom';
-			$texts.dispatchEvent(new Event('change'));
-			return $upload.click();
+		var file = $('#page-text-add #upload').files[0];
+		if (file) {
+			var reader = new FileReader();
+			reader.onload = (event) => $('#page-text-add #text').value = event.target.result;
+			reader.readAsText(file);
 		}
-
-		if (e.audio)
-			$text.innerHTML += '<audio id = "audio-player" controls = "controls"><source src="' + e.audio + '"/></audio>';
-		
-		$text.innerHTML += e.text;
-		$text.setAttribute('contenteditable', e.id == 'custom');
-	});
-	$texts.value = localStorage.getItem('text-id') || $texts.children[0].value;
-	$texts.dispatchEvent(new Event('change'));
-
-	$phrase.addEventListener('click', function () {
-		var text = texts[$texts.value];
-		if (!text.audio || !text.timemarks) 
-			return $voices.querySelector('*[current="true"]').dispatchEvent(new Event('click'));
-
-		if (AudioPlayer.playing)	
-			return AudioPlayer.stop();
-		
-		AudioPlayer.play(text.audio, text.timemarks[phrase_no], text.timemarks[phrase_no + 1]);
-	});
-
-	if (isMobile) {
-		$phrase_number_input.setAttribute('type', 'number');
-		$phrase.addEventListener('contextmenu', function (event) {
-			event.stopImmediatePropagation();
-			showPage('voices');
-		});
-		var $panel = $pages.phrase.querySelector('#panel-voices');
-		$pages.voices.appendChild($panel);
-
-		$phrase_number_input.addEventListener('focus', function () {
-			$panel_phrase.style.display = 'none';
-			$panel_recognition.style.display = 'none';
-		});
-
-		$phrase_number_input.addEventListener('blur', function () {
-			$panel_phrase.style.display = 'block';
-			$panel_recognition.style.display = 'block';
-		});
-
-		var touch = {start: 0, end: 0};
-		$panel_recognition.addEventListener('touchstart', (event) => touch.start = event.changedTouches[0].screenX, false);
-		$panel_recognition.addEventListener('touchend', function (event) {
-			touch.end = event.changedTouches[0].screenX;
-				
-			if (Math.abs(touch.start - touch.end) > 20)
-			    setPhrase(phrase_no + (touch.start < touch.end ? -1 : 1));
-		})
 	}
-   
-	$phrase_number.addEventListener('click', function () {
-		$phrase_number_input.value = phrase_no + 1;
-		$phrase_number_input.focus();
+	$('#page-text-add #upload').addEventListener('change', loadFile, false);
+	$('#page-text-add #button-load-file').addEventListener('click', () => $('#page-text-add #upload').click());	
+
+	$('#page-main #phrase-number').addEventListener('click', function () {
+		$('#page-main #phrase-number-input').style.display = 'inline-block';
+		$('#page-main #phrase-number-input').value = current_phrase_no + 1;
+		$('#page-main #phrase-number-input').focus();
 	});
 
-	$phrase_number_input.addEventListener('keypress', function (event) {
-  		if (event.keyCode == 13 && !isNaN(this.value)) 	
+	$('#page-main #phrase-number-input').addEventListener('blur', (event) => event.target.style.display = 'none');
+	$('#page-main #phrase-number-input').addEventListener('keypress', function (event) {
+  		if (event.keyCode == 13 && !isNaN(this.value)) {	
+			this.blur();	
 			setPhrase(this.value - 1);
+		}
 	});
+	$('#page-main #panel-counter #button-prev-phrase').addEventListener('click', () => setPhrase(current_phrase_no - 1));
+	$('#page-main #panel-counter #button-next-phrase').addEventListener('click', () => setPhrase(current_phrase_no + 1));
 
-	function setPhrase(no) {
-		if (phrase_no == no && $phrase.textContent == phrases[phrase_no])
-			return;	
+	function setPhrase (no) {
+		clearTimeout(nextPhraseTimer);
+
+		no = parseInt(no) || 0;
+		var id = $('#texts div[current]').id;
+		var text = texts[id];
 
 		if (no < 0)
 			return setPhrase(0);
 
-		if (no > phrases.length - 1)
-			return setPhrase(phrases.length - 1);
+		if (no > text.phrases.length - 1)
+			return setPhrase(text.phrases.length - 1);		
 
-		$pages.phrase.style.display = 'block';
-		$phrase.innerHTML = phrases[no].split(' ').map((e) => e.indexOf('<') == -1 ? '<span>' + e + '</span>' : e).join(' ');
-		$phrase.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
-		$phrase_number.innerHTML = (no + 1) + '/' + phrases.length;
-		$buttons.prev_phrase.style.visibility = no == 0 ? 'hidden' : 'visible';
-		$buttons.next_phrase.style.visibility = no == phrases.length - 1 ? 'hidden' : 'visible';
-		$voice_speed.value = localStorage.getItem('voice-speed') || 1;
-		$panel_recognition.removeAttribute('mode');	
-		$recognition.innerHTML = '';
-		$recognition.removeAttribute('correct');
-		$recognition.removeAttribute('confidence');
-		$compare.innerHTML = '';
-		$buttons.listen.setAttribute('hidden', true);
-		$buttons.record.removeAttribute('record');
-		$phrase_number_input.blur();
+		current_phrase_no = no;
+		$('#page-main #panel-counter #button-prev-phrase').style.visibility = no == 0 ? 'hidden' : 'visible';
+		$('#page-main #panel-counter #button-next-phrase').style.visibility = no == text.phrases.length - 1 ? 'hidden' : 'visible';
 
-		phrase_no = no;
+		$('#page-main #phrase-number').innerHTML = no + 1 + '/' + text.phrases.length;
+		$('#page-main #panel-counter #caption').innerHTML = text.name;
+		$('#page-main #phrase').innerHTML = text.phrases[no].split(' ').map((e) => e.indexOf('<') == -1 ? '<span>' + e + '</span>' : e).join(' ');
+		$('#page-main #phrase > *', e => e.addEventListener('click', (event) => event.stopImmediatePropagation() || speakText(event.target.textContent)));
+		$('#page-main #button-listen').setAttribute('hidden', true);
+		$('#page-main #recognition').innerHTML = '';
+		$('#page-main #recognition').removeAttribute('confidence');
+		$('#page-main #compare').innerHTML = '';
+
+		if (getOption('speech-auto-read') == 'yes' && $('#page-main').hasAttribute('current'))
+			speakText(text.phrases[no]);
+
+		localStorage.setItem('speech-phrase', no);
 	}
 
-	function speakWord (event) {
-		event.stopImmediatePropagation();
-		var evt = new CustomEvent('speak-text', {detail: this.textContent});
-		document.dispatchEvent(evt);
+	function initOptions() {
+		$('#page-option .content > div', function ($opt) {	
+			var opt = $opt.id;
+			var $e = $('#' + opt);
+			for(var i = 0; i < $e.children.length; i++)
+				$e.children[i].addEventListener('click', (event) => setOption(opt, event.target.getAttribute('value')));
+			setOption(opt, localStorage.getItem(opt));
+		});
 	}
 
-	$buttons.continue.addEventListener('click', function () {
-		var id = $texts.value;
-		var e = texts[id];
-		localStorage.setItem('text-id', id);
-			
-		if (id == 'custom') {
-			var customText = $text.innerText.split('\n').map((e2) => e2.trim()).join('\n');
-			localStorage.setItem('custom', customText);
-			texts.custom.text = customText;	
-		}
+	function setOption(opt, value) {
+		var $e = $('#' + opt);
+		var def = $e.getAttribute('default');
+		localStorage.setItem(opt, value || def);
+		for(var i = 0; i < $e.children.length; i++)
+			$e.children[i].removeAttribute('current');
 
-		if (e.audio)
-			$text.querySelector('audio').pause(); 
-
-		if (audioContext && e.audio && e.timemarks) {
-			var request = new XMLHttpRequest();
-			request.open('GET', e.audio, true);
-			request.responseType = 'arraybuffer';
-			request.onload = () => audioContext.decodeAudioData(request.response, (buffer) => textAudioBuffer = buffer);
-			request.send();
-		} else 
-			textAudioBuffer = null;
-
-		phrases = texts[id].text.split('\n').map((e) => e.trim()).filter((e) => !!e);
-		showPage('phrase');
-		$pages.phrase.querySelector('#caption').innerHTML = texts[id].name;
-		setPhrase(0);
-	});
-
-	if (typeof speechSynthesis !== 'undefined') {
-		var voices = [];
-		var current_voice = localStorage.getItem('voice');
-		$voice_speed.addEventListener('input', (event) => localStorage.setItem('voice-speed', event.target.value));
-
-		document.addEventListener('speak-text', (event) => speakText(event.detail));
-
-		function speakText(text) {
-			var utterance = new SpeechSynthesisUtterance(text);
-			utterance.voice = voices[current_voice];
-			utterance.rate = $voice_speed.value || 1;
-			speechSynthesis.speak(utterance);
-		};
-
-		function loadVoices () {
-			$voices.innerHTML = '';
-			voices = speechSynthesis.getVoices();
-			voices.forEach(function(e, i) {
-				if (e.lang.indexOf('en') == 0 && (e.lang.indexOf('US') != -1 || e.lang.indexOf('UK') != -1 || e.lang.indexOf('GB') != -1)) {
-					var $voice = document.createElement('div');
-					$voice.setAttribute('class', 'button speak');
-					$voice.setAttribute('current', i == current_voice);
-					$voice.setAttribute('voice', i);
-					$voice.setAttribute('title', e.name);
-					$voice.innerHTML = '&#1010' + ($voices.children.length + 2) + ';'; 
-					$voices.appendChild($voice);
-				}	
-			});
-
-			if (!$voices.querySelector('*[current="true"]') && $voices.children.length > 0) {
-				var $e = $voices.children[0];
-				$e.setAttribute('current', true);
-				current_voice = $e.getAttribute('voice');
-			}
-			
-			for (var i = 0; i < $voices.children.length; i++) 
-				$voices.children[i].addEventListener('click', function (event) {
-					var voice = this.getAttribute('voice');
-					if (current_voice == voice) 
-						return speechSynthesis.speaking ? speechSynthesis.cancel() : speakText($phrase.textContent);
-					
-					$voices.querySelector('*[current="true"]').removeAttribute('current');
-					$voices.querySelector('*[voice="' + voice + '"]').setAttribute('current', true);	
-
-					current_voice = voice;
-					localStorage.setItem('voice', voice);
-					speakText($phrase.textContent);
-				});
-		}
-		
-		loadVoices();
-		if (speechSynthesis.onvoiceschanged !== undefined) {
-			speechSynthesis.onvoiceschanged = loadVoices;
-		}
+		var $curr = $e.querySelector('[value="' + value + '"]') || $e.querySelector('[value="' + def + '"]')
+		$curr.setAttribute('current', true);
 	}
-	
-	$buttons.listen.addEventListener('click', function (event) {
-		event.stopImmediatePropagation();
 
-		if (!userAudio || !userAudio.duration)
+	function getOption(opt) {
+		var $e = $('#' + opt + ' [current]');
+		return $e ? $e.getAttribute('value') : $('#' + opt).getAttribute('default');
+	}
+
+	var voices = [];
+	function speakText(text) {
+		var utterance = new SpeechSynthesisUtterance(text);
+		utterance.voice = voices[getOption('speech-voice')];
+		utterance.rate = getOption('speech-voice-speed') || 1;
+		speechSynthesis.speak(utterance);
+	};
+
+	function loadVoices (cb) {
+		voices = speechSynthesis.getVoices();
+		var $voices = $('#page-option #speech-voice');
+		if ($voices.innerHTML.trim())
 			return;
 
-		if (userAudio.paused)
-			return userAudio.play();
+		function speakExample () {
+			setTimeout(() => speakText('Where is a cat?'), 200);
+		}
 
-		userAudio.pause();
-		userAudio.currentTime = 0;
-	});
+		voices.forEach(function(e, i) {
+			if (e.lang.indexOf('en') == 0 && (e.lang.indexOf('US') != -1 || e.lang.indexOf('UK') != -1 || e.lang.indexOf('GB') != -1)) {
+				var $div = document.createElement('div');
+				$div.setAttribute('value', i);
+				$div.setAttribute('title', e.name);
+				$div.innerHTML = $voices.children.length + 1; 
+				$div.addEventListener('click', speakExample);
+				$voices.appendChild($div);
+				$voices.appendChild(document.createTextNode(' '));
+			}	
+		});
 
-	function showPage(page) {
-		for (var p in $pages)
-			$pages[p].style.display = 'none';
+		if (!$voices.children.length)
+			return;
 
-		$pages[page].style.display = 'block';
-		AudioPlayer.stop();
+		var current = ($('#page-option #speech-voice [value="' + localStorage.getItem('speech-voice') + '"]') || $voices.children[0]).getAttribute('value');
+		$voices.setAttribute('default', current);
+		$voices.classList.add('col' + $voices.children.length);
+		setOption('speech-voice', current);
+
+		$('#page-option #speech-voice-speed > div', $e => $e.onclick = speakExample);
+		cb();
 	}
-	
-	document.querySelectorAll('.close').forEach(function ($e) {
-		var back = $e.getAttribute('back') || 'text';
-		$e.addEventListener('click', () => showPage(back));
-	});
 
-	history.pushState({}, '', window.location.pathname);
-	window.addEventListener('popstate', function(event) {
-		if ($pages.text.style.display == 'block')
-			return history.back();
-
-		if ($pages.voices.style.display == 'block')
-			return showPage('phrase');
-
-		history.pushState(null, null, window.location.pathname);
-		showPage('text');
-	}, false);
-
-	$buttons.prev_phrase.addEventListener('click', () => setPhrase(phrase_no - 1));
-	$buttons.next_phrase.addEventListener('click', () => setPhrase(phrase_no + 1));
-
-	$buttons.help.addEventListener('click', () => showPage('help'));
-	
 	navigator.mediaDevices.getUserMedia({audio: true}).then (function (stream) {
-		showPage('text');		
- 			
+		$('#page-start #microphone').remove();
+
 		var recognition = new webkitSpeechRecognition();
-		var chunks;
+		var chunks, userAudio;
 
 		var mediaRecorder = new MediaRecorder(stream);
 		mediaRecorder.addEventListener('dataavailable', event => chunks.push(event.data));
 
 		var time;
+		var isMobile = (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator && navigator.userAgent || ''));
+
+		var $panel_recognition = $('#page-main #panel-recognition');
+		var $recognition = $('#page-main #recognition');
+		var $compare = $('#page-main #compare');
 
 		function startRecord(event) {
 			event.stopImmediatePropagation();
@@ -354,11 +264,11 @@ window.addEventListener('load', function() {
 			if (event.type != 'touchstart' && event.type == 'mousedown' && event.which != 1)
 				return;
 
-			if ($buttons.record.hasAttribute('record'))
+			if ($('#page-main #button-record').hasAttribute('record'))
 				return;
 
 			time = new Date().getTime();
-			$buttons.record.setAttribute('record', true);
+			$('#page-main #button-record').setAttribute('record', true);
 			$panel_recognition.setAttribute('mode', 'recognition');
 			$compare.innerHTML = '';
 			$recognition.innerHTML = '';
@@ -380,12 +290,15 @@ window.addEventListener('load', function() {
 			recognition.onresult = function (event) {
 				var res = event.results[0][0];
 
-				var phrase = $phrase.textContent.trim();
+				var event = new MouseEvent('mouseup', {'which': 1});
+				$('#page-main #button-record').dispatchEvent(event);
+
+				var phrase = $('#page-main #phrase').textContent.trim();
 				var transcript = (res.transcript || '').replace(/\d+/g, num2text);
-				transcript = homophones.replace(phrase, transcript);
+				transcript = replaceHomophones(phrase, transcript);
 
 				$recognition.innerHTML = transcript.split(' ').map((e) => '<span>' + e + '</span>').join(' ');
-				$recognition.querySelectorAll('*').forEach((e) => e.addEventListener('click', speakWord));
+				$recognition.querySelectorAll('*').forEach((e) => e.addEventListener('click', (event) => speakText(event.target.textContent)));
 				$recognition.setAttribute('confidence', (parseInt(res.confidence * 100) + '%'));
 
 				var clear = (text) => text.replace(/[^\w\s]|_/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -403,6 +316,12 @@ window.addEventListener('load', function() {
 				
 				$compare.innerHTML = compare;
 				$recognition.setAttribute('correct', phrase == transcript);
+
+				if (phrase == transcript && getOption('speech-auto-next') == 'yes')
+					nextPhraseTimer = setTimeout(() => setPhrase(current_phrase_no + 1), 1500);
+
+				if (phrase == transcript && getOption('speech-success-ring') == 'yes')
+					$success.play();
 			}
 
 			recognition.onerror = function (event) {
@@ -423,9 +342,10 @@ window.addEventListener('load', function() {
 			if (new Date().getTime() - time < 300)
 				return;
 
-			mediaRecorder.stop();
-			$buttons.listen.removeAttribute('hidden');
-			$buttons.record.removeAttribute('record');
+			if (mediaRecorder.state == 'recording')
+				mediaRecorder.stop();
+			$('#page-main #button-listen').removeAttribute('hidden');
+			$('#page-main #button-record').removeAttribute('record');
 
 			if (recognition)
 				recognition.stop();
@@ -434,72 +354,115 @@ window.addEventListener('load', function() {
 				var blob = new Blob(chunks, {type : 'audio/ogg; codecs=opus'});
 				var url = URL.createObjectURL(blob);
 				userAudio = new Audio(url);
-
-				if (audioContext && textAudioBuffer) {
-					var $canvas = $audio_compare.querySelector('canvas');
-					var h = Math.min($panel_recognition.offsetHeight, 100);
-					var w = $panel_recognition.offsetWidth;
-					$canvas.width = w;
-					$canvas.height = h;
-					var ctx = $canvas.getContext('2d');
-					ctx.clearRect(0, 0, w, h);
-					var tms = texts[$texts.value].timemarks;
-
-					function drawAudioBuffer(buffer, is_text) {
-						var data = buffer.getChannelData(0);
-
-						var from = is_text ? buffer.sampleRate * tms[phrase_no] : 0.3 * buffer.sampleRate;
-						var to = is_text && buffer.sampleRate * tms[phrase_no + 1] || (data.length - 1);
-						data = data.slice(from, to);
-	
-						var min = Math.min(...data);
-						var max = Math.max(...data);
-						data = data.map((e) => (e - min) * 2/ (max - min) - 1)
-
-						// remove silence
-						from = data.findIndex((e) => e > 0.25);
-						to = data.length - 1;
-						while(data[to] < 0.25 && to > 0)
-							to--;
-						data = data.slice(from, to);
-				
-						ctx.strokeStyle = is_text ? '#bbb' : 'rgba(0, 0, 255, 0.3)';
-				
-						var step = Math.ceil(data.length / w) ;
-						var pos = is_text ? h * 0.25 : h * 0.75;
-						ctx.beginPath();
-						for (var i = 0; i < w; i++) {
-							var chunk = data.slice(i * step, (i + 1) * step);	
-							ctx.moveTo(i, pos - Math.min(...chunk) * h / 4);
-							ctx.lineTo(i, pos - Math.max(...chunk) * h / 4);
-						}
-						ctx.stroke();
-					}
-
-					fetch(url)
-						.then(response => response.arrayBuffer())
-						.then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-						.then(buffer => drawAudioBuffer(textAudioBuffer, true) || drawAudioBuffer(buffer));
-				}
 			}, 500);
 		}
 
-		$buttons.record.addEventListener('click', (event) => event.stopImmediatePropagation());
-		$buttons.record.addEventListener(isMobile ? 'touchstart' : 'mousedown', startRecord);
-		$buttons.record.addEventListener(isMobile ? 'touchend' : 'mouseup', stopRecord);
+		$('#page-main #button-record').addEventListener('click', (event) => event.stopImmediatePropagation());
+		$('#page-main #button-record').addEventListener(isMobile ? 'touchstart' : 'mousedown', startRecord);
+		$('#page-main #button-record').addEventListener(isMobile ? 'touchend' : 'mouseup', stopRecord);
+		$('#page-main #button-listen').addEventListener('click', function() {
+			event.stopImmediatePropagation();
+	
+			if (!userAudio || !userAudio.duration)
+				return;
+	
+			if (userAudio.paused)
+				return userAudio.play();
+	
+			userAudio.pause();
+			userAudio.currentTime = 0;			
+		});
 
 		$panel_recognition.addEventListener('click', function (event) {
 			var mode = this.getAttribute('mode');
-			this.setAttribute('mode', 
-				mode == 'recognition' && $compare.textContent.trim() ? 'compare' :
-				mode == 'recognition' && !$compare.textContent.trim() && textAudioBuffer ? 'audio-compare' :
-				'recognition');
+			this.setAttribute('mode', mode == 'recognition' && $compare.textContent.trim() ? 'compare' : 'recognition');
 		})
-	}).catch((err) => $pages.error.setAttribute('error', 'microphone'));
+	}).catch((err) => alert(err.message));
 
+	function setPage(page) {
+		$('audio', $e => $e.pause());
+		$('.page', $e => $e.removeAttribute('current'));
+		$('#page-' + page).setAttribute('current', true);
+	}
+
+	history.pushState({}, '', window.location.pathname);
+	window.addEventListener('popstate', function(event) {
+		var page = $('.page[current]');
+		if (page.id == 'page-start')
+			return history.back();
+
+		history.pushState(null, null, window.location.pathname);
+		if (page.id == 'page-main')
+			return setPage('start');
+
+		page.querySelector('.close').click();
+	}, false);
+
+	function $ (selector, apply) {
+		return apply ? Array.prototype.slice.call(document.querySelectorAll(selector) || []).forEach(apply) : document.querySelector(selector);
+	}
+
+	// UTILS
+	function parseTexts (data) {
+		var texts = {};
+		var deleted = (localStorage.getItem('speech-deleted-texts') || '').split(';');
+
+		data += '===' + (localStorage.getItem('speech-user-texts') || '');
+		data.split('===').forEach(function(text) {
+			var e = {phrases: []};
+
+			var header_mode = true;				
+			text.split('\n').forEach(function (line, i) {					
+				line = line.trim();
+
+				if (!line && i == 0)	
+					return;
+
+				if (!line)
+					header_mode = false;
+
+				if (line && header_mode) 
+					e[line.substr(0, line.indexOf(':')).trim()] = line.substr(line.indexOf(':') + 1).trim();
+				else
+					e.phrases.push(line);
+			})
+			
+			e.text = (e.audio ? '<audio controls = "controls"><source src="' + e.audio + '"/></audio>' : '') + e.phrases.join('\n').trim();
+			e.phrases = e.phrases.filter(e => !!e);
+
+			if (e.id && e.phrases.length > 0 && e.name && deleted.indexOf(e.id) == -1)
+				texts[e.id] = e;
+		})
+
+		return texts;
+	}
+
+	function parseHomophones(data) {
+		var res = {};
+		data.split('\n').map(e => e.split(';')).forEach(e => e.forEach(w => res[w] = e));
+		return res;
+	}
+	
+	function replaceHomophones (phrase, transcript) {
+		var phrase_words = phrase.split(' ').map((w) => w.toLowerCase().replace(/(^\W*)|(\W*$)/g, ''));
+		return transcript.split(' ').map(function(word, i) {
+			var w = word.toLowerCase();
+			var ws = homophones[w];
+			if (!ws)
+				return word;
+	
+			var check = (w) => i > 1 && phrase_words[i - 1] == w || phrase_words[i] == w || i + 1 < phrase_words.length && phrase_words[i + 1] == w
+			for (var j = 0; j < ws.length; j++) {
+				if (check(ws[j]))
+					return ws[j];
+			}
+	
+			return word;
+		}).join(' ');
+	}	
+		
 	var num = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split(' ');
 	var tens = 'twenty thirty forty fifty sixty seventy eighty ninety'.split(' ');
-	
 	function num2text(n){
 	    if (n < 20) return num[n];
 	    var digit = n%10;
