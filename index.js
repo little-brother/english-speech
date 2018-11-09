@@ -288,10 +288,9 @@ window.addEventListener('load', function() {
 			recognition.continuous = false;
 
 			recognition.onresult = function (event) {
-				var res = event.results[0][0];
+				stopRecord(new MouseEvent('mouseup', {'which': 1}));
 
-				var event = new MouseEvent('mouseup', {'which': 1});
-				$('#page-main #button-record').dispatchEvent(event);
+				var res = event.results[0][0];
 
 				var phrase = $('#page-main #phrase').textContent.trim();
 				var transcript = (res.transcript || '').replace(/\d+/g, num2text);

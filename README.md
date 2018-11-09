@@ -1,7 +1,7 @@
 This is an [application](https://little-brother.github.io/english-speech/) to the practice of English speech via Google Speech Recognition API.<br>
 
 
-If app don't work properly, e.g. you don't listen any sound or you see permanent "Loading..." instead "Play"-button on first screen, it's means that your browser is obsolete.
+If app don't work properly, e.g. you don't listen any sound or you see permanent "Loading..." instead "Start"-button on first screen, it's means that your browser is obsolete.
 Use <a href = "https://www.google.ru/intl/en_uk/chrome/"><b>Chrome</b></a> to avoid troubles.<br>
 Minimal supported Android version is 4.1 with Chrome 69.<br>
 
